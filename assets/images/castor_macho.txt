@@ -54,14 +54,25 @@ animacion Feliz 0.18 1
   cuadro 128  64 64 64  32.0 28.0
   cuadro 192  64 64 64  32.0 28.0
 
-# --- Fila 2: comiendo un tronco --------------------------------------------
-animacion Hambrienta 0.30 1
+# --- Fila 2: comiendo -------------------------------------------------------
+# Es una ACCION, no un estado: se repite en bucle mientras la mascota coma y
+# para cuando la barra de saciedad se llena o se acaba el plato.
+animacion Comer 0.30 1
   cuadro   0 128 64 64  32.0 28.0
   cuadro  64 128 64 64  32.0 28.0
   cuadro 128 128 64 64  32.0 28.0
   cuadro 192 128 64 64  32.0 28.0
 
-# --- Fila 3: ceno fruncido y gota de sudor ----------------------------------
+# --- Fila 3: ceno fruncido y gota de sudor ---------------------------------
+# La hoja trae una sola pose de incomodidad, asi que Hambrienta y Cansada
+# comparten los mismos cuadros. Si algun dia hay una fila propia para el
+# hambre, basta cambiar las coordenadas de este primer bloque.
+animacion Hambrienta 0.40 1
+  cuadro   0 192 64 64  32.0 28.0
+  cuadro  64 192 64 64  32.0 28.0
+  cuadro 128 192 64 64  32.0 28.0
+  cuadro 192 192 64 64  32.0 28.0
+
 animacion Cansada 0.40 1
   cuadro   0 192 64 64  32.0 28.0
   cuadro  64 192 64 64  32.0 28.0
@@ -83,10 +94,8 @@ animacion Jugando 0.20 1
   cuadro 192 320 64 64  32.0 28.0
 
 # --- Fila 6: bano, con burbujas ---------------------------------------------
-# Esta no es un estado del juego sino una ACCION: se reproduce una sola vez al
-# pulsar ASEAR y despues la mascota vuelve al estado en el que estaba. Por eso
-# lleva el bucle en 0.
-animacion Aseo 0.30 0
+# Otra ACCION en bucle: se repite mientras dure el bano.
+animacion Aseo 0.30 1
   cuadro   0 384 64 64  32.0 28.0
   cuadro  64 384 64 64  32.0 28.0
   cuadro 128 384 64 64  32.0 28.0

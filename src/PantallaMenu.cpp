@@ -1,6 +1,6 @@
 #include "PantallaMenu.hpp"
 
-#include "HojaSprites.hpp"
+#include "Mosaico.hpp"
 #include "Tema.hpp"
 
 #include <cmath>
@@ -22,33 +22,56 @@ PantallaMenu::PantallaMenu(const sf::Font& fuente, sf::Vector2f tamanoVentana)
     : fuente_(fuente)
     , tamanoVentana_(tamanoVentana)
     , titulo_(fuente, "VIRTUALPET", kTamTitulo)
-    , pie_(fuente, "Flechas o W/S para moverte   -   Enter para elegir", 16)
+    , pie_(fuente, "FLECHAS MOVER    ENTER ELEGIR    M MUSICA", tema::kTextoChico)
 {
     construirFondo();
 
-    // --- Titulo, inclinado como en el menu del Proyecto3P ---
+    // --- Marquesina: el marco iluminado del titulo de una recreativa --------
+    const sf::Vector2f tamanoMarco(600.f, 96.f);
+    const sf::Vector2f posMarco((tamanoVentana_.x - tamanoMarco.x) / 2.f, 46.f);
+    marquesina_ = tema::panelBiselado(posMarco, tamanoMarco, tema::kPanelBorde);
+
+    // El titulo sigue inclinado, como en el menu del Proyecto3P.
     titulo_.setFillColor(kAmarillo);
     const sf::FloatRect limites = titulo_.getLocalBounds();
     titulo_.setOrigin({ limites.position.x + limites.size.x / 2.f,
                         limites.position.y + limites.size.y / 2.f });
-    titulo_.setPosition({ tamanoVentana_.x / 2.f, 100.f });
+    titulo_.setPosition({ tamanoVentana_.x / 2.f, posMarco.y + tamanoMarco.y / 2.f });
     titulo_.setRotation(sf::degrees(-8.f));
 
-    // --- Opciones ---
+    // --- Opciones ------------------------------------------------------------
     const std::vector<std::string> opciones { "Jugar", "Opciones", "Salir" };
     textosMenu_.reserve(opciones.size());
+    placas_.reserve(opciones.size());
+
     for (const std::string& texto : opciones)
+    {
         textosMenu_.emplace_back(fuente_, texto, kTamOpcion);
+        placas_.emplace_back();
+    }
 
     colocarOpciones();
 
-    // --- Pie de ayuda ---
-    pie_.setFillColor(sf::Color(255, 255, 255, 130));
+    // Triangulo senalador, a la izquierda de la placa elegida.
+    senalador_.setPointCount(3);
+    senalador_.setPoint(0, { 0.f,  0.f });
+    senalador_.setPoint(1, { 16.f, 9.f });
+    senalador_.setPoint(2, { 0.f, 18.f });
+    senalador_.setFillColor(kAmarillo);
+
+    // --- Tira inferior con la ayuda, igual que la botonera de la partida -----
+    const float altoTira = 34.f;
+    tiraPie_ = tema::panelBiselado({ 0.f, tamanoVentana_.y - altoTira },
+                                   { tamanoVentana_.x, altoTira });
+
+    pie_.setFillColor(tema::kTextoSuave);
     const sf::FloatRect limitesPie = pie_.getLocalBounds();
     pie_.setOrigin({ limitesPie.position.x + limitesPie.size.x / 2.f, 0.f });
-    pie_.setPosition({ tamanoVentana_.x / 2.f, tamanoVentana_.y - 46.f });
+    pie_.setPosition({ tamanoVentana_.x / 2.f, tamanoVentana_.y - altoTira + 10.f });
 
-    // --- Musica e icono de altavoz ---
+    barrido_ = tema::barridoCRT(tamanoVentana_);
+
+    // --- Musica e icono de altavoz -------------------------------------------
     if (musica_.load("assets/sound/Menu.ogg"))
     {
         musica_.setLoop(true);
@@ -62,93 +85,41 @@ PantallaMenu::PantallaMenu(const sf::Font& fuente, sf::Vector2f tamanoVentana)
 
 void PantallaMenu::construirFondo()
 {
-    const auto ancho = static_cast<unsigned>(tamanoVentana_.x);
-    const auto alto  = static_cast<unsigned>(tamanoVentana_.y);
+    // El fondo del menu de Proyecto3P es un patron repetido del personaje.
+    // Aqui se hace lo mismo, pero componiendolo en caliente a partir de las
+    // hojas de sprites, para no depender de una imagen dibujada aparte. Se
+    // alternan las dos especies, que es lo que ofrece el juego.
+    if (!componerMosaico(lienzoFondo_, tamanoVentana_,
+                         { "assets/images/conejo_macho.txt",
+                           "assets/images/castor_macho.txt" },
+                         kFondoBase))
+        return;
 
-    if (!lienzoFondo_.resize({ ancho, alto })) return;
-
-    lienzoFondo_.clear(kFondoBase);
-
-    // El fondo del menu de Proyecto3P es un patron repetido del personaje. Aqui
-    // se hace lo mismo, pero componiendolo en caliente a partir de las propias
-    // hojas de sprites, para no depender de una imagen de fondo dibujada
-    // aparte. Se alternan las dos especies, que es lo que ofrece el juego.
-    //
-    // HojaSprites no se puede copiar ni mover (cada Animacion guarda un puntero
-    // a su textura), asi que las dos viven como variables sueltas y se eligen
-    // con un indice, en vez de meterlas en un vector.
-    HojaSprites hojaConejo;
-    HojaSprites hojaCastor;
-
-    const bool hayConejo = hojaConejo.cargar("assets/images/conejo_macho.txt");
-    const bool hayCastor = hojaCastor.cargar("assets/images/castor_macho.txt");
-
-    if (hayConejo || hayCastor)
-    {
-        // Un sprite por hoja, ya colocado en su primer cuadro de reposo.
-        std::optional<sf::Sprite> sellos[2];
-
-        const auto preparar = [](std::optional<sf::Sprite>& destino,
-                                 const HojaSprites& hoja, bool disponible)
-        {
-            if (!disponible) return;
-            const Animacion* idle = hoja.animacion(TipoEstado::Normal);
-            if (!idle) return;
-
-            destino.emplace(hoja.textura());
-            idle->aplicarCuadroActual(*destino);
-            destino->setColor(sf::Color(255, 255, 255, 26));   // muy tenue
-            destino->setScale({ 2.f, 2.f });
-        };
-
-        preparar(sellos[0], hojaConejo, hayConejo);
-        preparar(sellos[1], hojaCastor, hayCastor);
-
-        const float paso = 128.f;
-        int fila = 0;
-        for (float y = 20.f; y < tamanoVentana_.y + paso; y += paso, ++fila)
-        {
-            // Filas alternas desplazadas, para que no se vea una rejilla.
-            const float desfase = (fila % 2 == 0) ? 0.f : paso / 2.f;
-            int columna = 0;
-
-            for (float x = 20.f + desfase; x < tamanoVentana_.x + paso; x += paso, ++columna)
-            {
-                // Tablero de ajedrez entre las dos especies. Si solo hay una
-                // hoja cargada, se usa esa en todas las casillas.
-                auto& sello = sellos[(fila + columna) % 2];
-                auto& usado = sello ? sello : (sellos[0] ? sellos[0] : sellos[1]);
-                if (!usado) continue;
-
-                usado->setRotation(sf::degrees(((fila + columna) % 5) * 7.f - 14.f));
-                usado->setPosition({ x, y });
-                lienzoFondo_.draw(*usado);
-            }
-        }
-    }
-
-    // Un velo oscuro en el centro para que el texto se lea sobre el patron.
-    sf::RectangleShape velo({ tamanoVentana_.x, tamanoVentana_.y });
-    velo.setFillColor(sf::Color(20, 12, 30, 90));
-    lienzoFondo_.draw(velo);
-
-    lienzoFondo_.display();
     fondo_.emplace(lienzoFondo_.getTexture());
+
+    // Un velo oscuro encima, para que el texto se lea sobre el patron.
+    velo_.setSize(tamanoVentana_);
+    velo_.setFillColor(sf::Color(20, 12, 30, 90));
 }
 
 void PantallaMenu::colocarOpciones()
 {
-    const float altoTotal = textosMenu_.size() * kTamOpcion +
-                            (textosMenu_.size() - 1) * kSeparacion;
-    const float inicioY = (tamanoVentana_.y - altoTotal) / 2.f;
+    const float altoTotal = placas_.size() * kAltoPlaca +
+                            (placas_.size() - 1) * kHuecoPlaca;
+    const float inicioY   = (tamanoVentana_.y - altoTotal) / 2.f + 24.f;
+    const float x         = (tamanoVentana_.x - kAnchoPlaca) / 2.f;
 
-    for (std::size_t i = 0; i < textosMenu_.size(); ++i)
+    for (std::size_t i = 0; i < placas_.size(); ++i)
     {
+        const float y = inicioY + i * (kAltoPlaca + kHuecoPlaca);
+
+        placas_[i] = tema::paralelogramo({ x, y }, { kAnchoPlaca, kAltoPlaca });
+
         sf::Text& texto = textosMenu_[i];
         const sf::FloatRect limites = texto.getLocalBounds();
-        texto.setOrigin({ limites.position.x + limites.size.x / 2.f, limites.position.y });
-        texto.setPosition({ tamanoVentana_.x / 2.f,
-                            inicioY + i * (kTamOpcion + kSeparacion) });
+        texto.setOrigin({ limites.position.x + limites.size.x / 2.f,
+                          limites.position.y + limites.size.y / 2.f });
+        texto.setPosition({ tamanoVentana_.x / 2.f, y + kAltoPlaca / 2.f });
     }
 }
 
@@ -208,11 +179,21 @@ void PantallaMenu::manejarEvento(const sf::Event& evento)
 
     if (const auto* movimiento = evento.getIf<sf::Event::MouseMoved>())
     {
-        raton_ = sf::Vector2f(movimiento->position);
+        const sf::Vector2f punto(movimiento->position);
 
-        // Pasar el raton por encima de una opcion la selecciona.
-        for (std::size_t i = 0; i < textosMenu_.size(); ++i)
-            if (textosMenu_[i].getGlobalBounds().contains(raton_))
+        // Solo cuenta si el raton se ha movido de verdad. Al traer la ventana
+        // al frente, Windows manda un aviso de movimiento con el cursor
+        // quieto, y eso le robaba la seleccion al teclado sin que nadie
+        // hubiera tocado el raton.
+        const bool seMovio = (punto != raton_);
+        raton_ = punto;
+        if (!seMovio) return;
+
+        // Pasar el raton por encima de una placa la selecciona. Se prueba
+        // contra la placa y no contra el texto: el area es mayor y mas
+        // predecible que las letras sueltas.
+        for (std::size_t i = 0; i < placas_.size(); ++i)
+            if (placas_[i].getGlobalBounds().contains(raton_))
                 seleccion_ = i;
         return;
     }
@@ -231,9 +212,9 @@ void PantallaMenu::manejarEvento(const sf::Event& evento)
             return;
         }
 
-        for (std::size_t i = 0; i < textosMenu_.size(); ++i)
+        for (std::size_t i = 0; i < placas_.size(); ++i)
         {
-            if (textosMenu_[i].getGlobalBounds().contains(punto))
+            if (placas_[i].getGlobalBounds().contains(punto))
             {
                 elegir(i);
                 return;
@@ -246,28 +227,57 @@ void PantallaMenu::actualizar(float dt)
 {
     reloj_ += dt;
 
-    for (std::size_t i = 0; i < textosMenu_.size(); ++i)
+    const float altoTotal = placas_.size() * kAltoPlaca +
+                            (placas_.size() - 1) * kHuecoPlaca;
+    const float inicioY   = (tamanoVentana_.y - altoTotal) / 2.f + 24.f;
+    const float x         = (tamanoVentana_.x - kAnchoPlaca) / 2.f;
+
+    for (std::size_t i = 0; i < placas_.size(); ++i)
     {
         const bool elegida = (i == seleccion_);
-        textosMenu_[i].setFillColor(elegida ? kAmarillo : sf::Color::White);
 
-        // La opcion activa late un poco, para que se vea cual es sin depender
-        // solo del color.
+        // La placa elegida se enciende en amarillo y el texto pasa a oscuro,
+        // como una tecla retroiluminada. Las demas quedan apagadas.
+        placas_[i].setFillColor(elegida ? kAmarillo : tema::kBoton);
+        placas_[i].setOutlineThickness(2.f);
+        placas_[i].setOutlineColor(elegida ? tema::kTexto : tema::kPanelBorde);
+
+        textosMenu_[i].setFillColor(elegida ? tema::kFondo : tema::kTexto);
+
+        // Y late un poco, para que se vea cual es sin depender solo del color.
         const float escala = elegida ? 1.f + std::sin(reloj_ * 4.f) * 0.03f : 1.f;
         textosMenu_[i].setScale({ escala, escala });
     }
+
+    // El senalador acompana a la placa activa, con un vaiven corto.
+    const float y = inicioY + seleccion_ * (kAltoPlaca + kHuecoPlaca);
+    const float empuje = std::sin(reloj_ * 5.f) * 4.f;
+    senalador_.setPosition({ x - 34.f + empuje, y + kAltoPlaca / 2.f - 9.f });
 }
 
 void PantallaMenu::dibujar(sf::RenderTarget& objetivo) const
 {
     if (fondo_) objetivo.draw(*fondo_);
+    objetivo.draw(velo_);
 
-    objetivo.draw(titulo_);
-    for (const sf::Text& texto : textosMenu_)
-        objetivo.draw(texto);
+    marquesina_.dibujar(objetivo);
+    tema::dibujarConSombra(objetivo, titulo_, 3.f);
 
+    for (std::size_t i = 0; i < placas_.size(); ++i)
+    {
+        objetivo.draw(placas_[i]);
+        tema::dibujarConSombra(objetivo, textosMenu_[i]);
+    }
+
+    objetivo.draw(senalador_);
+
+    tiraPie_.dibujar(objetivo);
     objetivo.draw(pie_);
+
     objetivo.draw(botonMusica_);
+
+    // El barrido de tubo va el ultimo, encima de todo lo demas.
+    objetivo.draw(barrido_);
 }
 
 } // namespace vp

@@ -27,6 +27,8 @@ package "nucleo (logica pura, sin SFML)" {
   abstract class Mascota {
     - nombre_ : string
     - genero_ : Genero
+    - actividadEnCurso_ : Actividad
+    - restanteActividad_ : float
     - edadSegundos_ : float
     - viva_ : bool
     - bitacora_ : deque<string>
@@ -42,6 +44,10 @@ package "nucleo (logica pura, sin SFML)" {
     + registrar(mensaje : string)
     + genero() : Genero
     + claveArte() : string
+    + actividad() : Actividad
+    + ocupada() : bool
+    + progresoActividad() : float
+    - avanzarActividad(dt : float)
     + {abstract} especie() : string
     + {abstract} sonido() : string
     + {abstract} comidaFavorita() : string
@@ -66,6 +72,14 @@ package "nucleo (logica pura, sin SFML)" {
 
   enum TipoMascota { Conejo, Castor }
   enum Genero { Macho, Hembra }
+  enum Actividad {
+    Ninguna
+    Comiendo
+    Jugando
+    Aseandose
+    Curandose
+    Durmiendo
+  }
   enum TipoEstado {
     Normal
     Feliz
@@ -142,6 +156,7 @@ package "nucleo (logica pura, sin SFML)" {
   class AdminMenu <<herramienta>> {
     - desbloqueado_ : bool
     - inmortalidad_ : bool
+    - metrica_ : bool
     - avanceClave_ : size_t
     - indiceEscala_ : size_t
     - registro_ : deque<string>
@@ -155,6 +170,8 @@ package "nucleo (logica pura, sin SFML)" {
     + revivir(m : Mascota)
     + envejecer(m : Mascota, dias : float)
     + alternarInmortalidad()
+    + metricaVisible() : bool
+    + alternarMetrica()
     + aplicarPorTick(m : Mascota, dt : float)
     + siguienteEscala()
     + agregarMonedas(inv : Inventario, n : int)
@@ -298,6 +315,14 @@ package "grafico (capa SFML)" {
     + forzarProcedural()
   }
 
+  class PanelComida {
+    - botones_ : vector<Boton>
+    - visible_ : bool
+    + refrescar(inv : Inventario, alElegir)
+    + abrir()
+    + elegirPorIndice(i : size_t) : bool
+  }
+
   class PanelAdmin {
     - botones_ : vector<Boton>
     + enlazar(admin, mascota, inventario, vista)
@@ -343,6 +368,7 @@ Mascota <|-- Conejo
 Mascota <|-- Castor
 
 Mascota ..> Genero : macho o hembra
+Mascota ..> Actividad : que esta haciendo
 Mascota "1" *-- "5" Atributo : posee
 Mascota "1" *-- "1" MaquinaEstados : posee
 
@@ -406,6 +432,8 @@ PantallaJuego "1" *-- "1" Hud
 PantallaJuego "1" *-- "0..*" Boton
 PantallaJuego "1" *-- "1" AdminMenu
 PantallaJuego "1" *-- "1" PanelAdmin
+PantallaJuego "1" *-- "1" PanelComida
+PanelComida ..> Inventario : lee la comida
 PantallaJuego "1" *-- "1" Inventario
 PantallaJuego "1" o-- "1" Mascota
 

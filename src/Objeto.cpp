@@ -17,7 +17,7 @@ Objeto::Objeto(std::string nombre, std::string descripcion, int precio, int usos
 
 bool Objeto::usar(Mascota& mascota)
 {
-    if (agotado() && !usosInfinitos_) return false;
+    if (agotado()) return false;
 
     // Plantilla de metodo: el flujo comun vive aqui, el efecto en la derivada.
     if (!aplicar(mascota)) return false;

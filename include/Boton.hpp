@@ -31,6 +31,10 @@ public:
     /// Devuelve true si el clic cayo dentro (y en ese caso ejecuta la accion).
     bool procesarClic(sf::Vector2f posicionClic);
 
+    /// Ejecuta la accion sin pasar por el raton, para los atajos de teclado.
+    /// Devuelve false si el boton esta apagado.
+    bool accionar();
+
     void establecerAccion(Accion accion)  { accion_ = std::move(accion); }
     void establecerHabilitado(bool habilitado);
     void establecerColores(sf::Color base, sf::Color resaltado);

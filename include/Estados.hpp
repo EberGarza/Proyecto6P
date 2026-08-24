@@ -56,7 +56,7 @@ public:
     bool permiteInteraccion() const override { return false; }
 
 private:
-    static constexpr float kRecuperacionEnergia = 8.0f;  ///< puntos por segundo
+    static constexpr float kRecuperacionEnergia = 4.0f;  ///< puntos por segundo
 };
 
 /// Salud baja: solo se recupera con medicina.
@@ -70,7 +70,7 @@ public:
     std::string mensaje() const override;
 
 private:
-    static constexpr float kCastigoFelicidad = 1.5f;     ///< puntos por segundo
+    static constexpr float kCastigoFelicidad = 0.20f;    ///< puntos por segundo
 };
 
 /// Estado temporal con duracion: al terminar vuelve a Normal o Feliz.

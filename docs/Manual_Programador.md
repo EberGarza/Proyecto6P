@@ -130,6 +130,24 @@ La salud es la excepción: no tiene tasa propia. La calcula
 `Mascota::aplicarEfectosSecundarios()` a partir de las otras cuatro. Eso es lo
 que convierte cinco números independientes en un sistema.
 
+### El ritmo
+
+Las tasas son puntos por segundo, y en la 1.2 se dividieron por ocho. Antes una
+barra se vaciaba en poco más de un minuto: había que estar delante del juego
+todo el rato o la mascota moría sola. Ahora:
+
+| | Saciedad llena a vacía |
+|--|--|
+| Conejo | unos 9 minutos |
+| Castor | unos 17 minutos |
+
+Se tocaron también las tasas que aplican los estados (el hambre desgasta el
+ánimo, la enfermedad más, dormir repone salud) para que guarden la proporción.
+Si se cambia una, hay que mirar las otras: son un conjunto, no números sueltos.
+
+Para probar sin esperar está la velocidad del Admin_Menu, que multiplica el
+reloj hasta x60.
+
 ## La hoja de sprites
 
 Cada combinación de especie y género tiene su propio archivo:
@@ -172,15 +190,12 @@ guarda en un mapa aparte:
 const Animacion* accion(const std::string& nombre) const;
 ```
 
-`RenderSprite::reproducirAccion("Aseo")` cambia a esa animación, marca
-`enAccion_` y la deja correr sin bucle. Cuando `Animacion::terminada()` da true,
-vuelve a la del estado. Un cambio de estado a mitad de la acción también la
-corta: si la mascota se duerme mientras se baña, lo que hay que ver es que se
-durmió.
+Van **en bucle**, y quien decide cuándo paran es la actividad de la mascota:
+mientras esté comiendo, la animación de comer se repite. Ver
+[Actividades](#actividades-las-acciones-llevan-su-tiempo).
 
-`RenderMascota::reproducirAccion()` **no es virtual pura**: el dibujo procedural
-no sabe hacer acciones y no tiene por qué implementarla. Quien la llama no
-pregunta antes; si no hay animación, no pasa nada.
+Si una hoja no trae la animación de una acción, el render se queda con la del
+estado y la acción funciona igual, sólo que sin dibujo propio.
 
 ### Por qué se ve nítido
 
@@ -208,6 +223,64 @@ plana.
 
 La regla general: **anclar donde el artista puso el origen**. Si la hoja está en
 rejilla, es la celda; si no lo está, hay que medirlo.
+
+## Actividades: las acciones llevan su tiempo
+
+Hasta la version 1.1, dar de comer era una linea: `saciedad += 25` y listo. La
+barra pegaba un salto y la animacion de comer, si acaso, se veia un segundo.
+
+Ahora hay dos conceptos separados:
+
+- El **estado** dice *como esta* la mascota: hambrienta, enferma, feliz.
+- La **actividad** dice *que hace* durante unos segundos: comiendo, jugando,
+  banandose, curandose.
+
+Son independientes a proposito. Una mascota puede estar hambrienta **y**
+comiendo a la vez: lo primero es la situacion, lo segundo es el remedio en
+marcha.
+
+### Como funciona
+
+`Mascota` guarda cuatro datos mientras dura una actividad:
+
+```cpp
+Actividad   actividadEnCurso_;
+float       restanteActividad_;   // cuanto queda por entregar
+float       totalActividad_;      // para poder decir el porcentaje
+float       ritmoActividad_;      // puntos por segundo
+```
+
+`alimentar(60, "un banquete")` no suma 60 de golpe: arranca una actividad que
+entrega 8 puntos por segundo hasta agotar los 60. Cada tick, `avanzarActividad()`
+mete la parte que toca y descuenta. Cuando se acaba —o cuando la barra se llena
+antes— la actividad se apaga sola y aplica los efectos de cierre (comer sube el
+animo y ensucia un poco).
+
+Eso da tres cosas gratis:
+
+1. **La animacion se repite** mientras dure, sin contar cuadros ni programar
+   temporizadores. La duracion la marca la comida.
+2. **La cantidad se nota.** Un banquete de 60 puntos tarda el doble que una
+   zanahoria de 30, y se ve.
+3. **Se puede medir.** `progresoActividad()` devuelve de 0 a 1, que es lo que
+   dibuja la telemetria del Admin_Menu.
+
+Dormir es la excepcion: no tiene cuenta atras, asi que sigue siendo un estado.
+`actividad()` lo declara como `Durmiendo` de todas formas, porque para quien
+mira la pantalla es lo mismo.
+
+### Como lo dibuja el render
+
+`RenderSprite::actualizar()` no recibe ordenes: mira a la mascota y se
+sincroniza. Pregunta dos cosas, en este orden:
+
+1. ¿Esta haciendo algo con animacion propia? (`Comer`, `Aseo`). Esa manda.
+2. Si no, la animacion de su estado.
+
+Antes habia un `reproducirAccion("Aseo")` que la pantalla llamaba al pulsar el
+boton. Se quito: dejaba la puerta abierta a que el sprite y la mascota dijeran
+cosas distintas si alguien se olvidaba de llamarlo. Preguntando en cada
+fotograma, eso no puede pasar.
 
 ## La interfaz de recreativa
 
@@ -243,14 +316,20 @@ Encima se dibujan muescas cada 26 px, para poder estimar el nivel sin leerlo.
 
 ### El escenario
 
-`PantallaJuego` compone el fondo **una sola vez**, en `construirEscenario()`: un
-`sf::RenderTexture` donde se repite en mosaico la propia mascota, igual que el
-menú. Al salir de su hoja, el fondo cambia con la especie y el género elegidos.
-Después es un único `sf::Sprite`, así que repetirlo no cuesta nada por fotograma.
+El fondo de mosaico lo compone `componerMosaico()`, en `Mosaico.hpp`: estampa
+una o varias hojas de sprites en tablero sobre un `sf::RenderTexture`, **una
+sola vez**. Después es un único `sf::Sprite`, así que repetirlo no cuesta nada
+por fotograma.
 
-`construirBarrido()` prepara un `sf::VertexArray` de líneas negras
-semitransparentes cada 3 px, que se dibuja al final sobre todo lo demás. Imita el
-barrido de un monitor de tubo. Al ser vértices y no una textura, no consume
+Lo usan las tres pantallas. El menú y las opciones alternan las dos especies; la
+partida estampa la hoja de la mascota elegida, así que el fondo cambia con la
+especie y el género. Estaba escrito tres veces, una por pantalla, y bastaba con
+que alguien tocara el paso o la transparencia de una para que dejaran de parecer
+el mismo juego.
+
+Lo mismo con `tema::barridoCRT()`: un `sf::VertexArray` de líneas negras
+semitransparentes cada 3 px que se dibuja al final, sobre todo lo demás. Imita
+el barrido de un monitor de tubo. Al ser vértices y no una textura, no consume
 memoria de vídeo ni se deforma si cambia el tamaño de la ventana.
 
 ### El anuncio de estado
@@ -265,7 +344,30 @@ sino del *cambio*, y por eso necesita recordar el valor anterior.
 `PantallaMenu`, `PantallaOpciones`, `Music` y `MusicButton` vienen del proyecto
 de tercer parcial, adaptados a SFML 3 y a la estructura de pantallas de aquí.
 
-Dos diferencias que conviene tener presentes al comparar los dos proyectos:
+### Por qué se rehizo el acabado
+
+Los menús eran texto centrado sobre un fondo. Funcionaban, pero no se parecían
+en nada a la partida, y el juego daba la impresión de estar hecho de dos piezas
+distintas pegadas. Ahora comparten cuatro elementos con la pantalla de juego:
+
+| Elemento | Dónde estaba antes | Qué hace |
+|----------|--------------------|----------|
+| Marquesina | sólo el título suelto | encierra el título en un marco biselado, como el rótulo iluminado de una máquina |
+| Placas | texto a secas | cada opción es un paralelogramo inclinado que se enciende al elegirla |
+| Señalador | nada | un triángulo que acompaña a la opción activa con un vaivén |
+| Barrido | sólo en la partida | las líneas de tubo cruzan también los menús |
+
+El volumen se dibuja además con una barra segmentada, la misma forma que las
+barras de la mascota: se lee de un vistazo sin mirar el número.
+
+Un detalle que salió al probarlo: el ratón robaba la selección al teclado. Al
+traer la ventana al frente, Windows manda un aviso de movimiento con el cursor
+**quieto**, y si el cursor estaba encima de una placa, esa pasaba a estar
+elegida. Ahora sólo cuenta si la posición cambió de verdad.
+
+### Dos diferencias con el Proyecto3P
+
+Conviene tenerlas presentes al comparar los dos proyectos:
 
 - Allí el menú era un método `Mostrar()` con su **propio bucle**, que bloqueaba
   hasta elegir. Aquí es una `Pantalla` más: no bloquea, devuelve una
@@ -287,6 +389,16 @@ Permite forzar cualquiera de los ocho estados, rellenar o vaciar las barras,
 matar y revivir, activar inmortalidad, acelerar el reloj hasta x60 y ver un
 diagnóstico en vivo. Sirve para depurar, pero sobre todo **para recorrer el
 diagrama de estados en segundos** en vez de esperar a que las barras bajen solas.
+
+### La telemetría
+
+El botón **Metrica** enciende un panel pequeño en la esquina del escenario con
+la actividad, el estado y el avance de lo que la mascota esté haciendo.
+
+Se queda encendido **aunque se cierre el Admin_Menu**, y eso es a propósito: el
+panel entero tapa la pantalla, así que no sirve para mirar una partida normal.
+La telemetría sí: ocupa una esquina y deja ver el juego mientras dice qué está
+pasando por dentro.
 
 ## Guardado
 
@@ -351,6 +463,18 @@ llega. Actualiza también `diagrama_estados.puml`.
 
 **Un objeto nuevo:** hereda de `Objeto`, implementa `aplicar()` y añádelo a
 `Inventario::inicial()`.
+
+**Una comida nueva:** basta una línea en `Inventario::inicial()`:
+
+```cpp
+inv.agregar(std::make_unique<Alimento>("un pastel", 25, 45.f, 1));
+//                                      nombre     precio  cuánto  raciones
+```
+
+La cantidad manda en dos cosas a la vez: cuánta saciedad devuelve **y** cuánto
+dura la animación de comer. Un número negativo de raciones significa infinitas.
+Si el nombre coincide con `comidaFavorita()` de la especie, da un extra de
+ánimo.
 
 **Una pantalla nueva:** hereda de `Pantalla`, añade su valor a
 `Pantalla::Transicion` y engánchala en el `switch` de `Juego::cambiarPantalla()`.

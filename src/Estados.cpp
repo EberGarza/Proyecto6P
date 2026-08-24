@@ -72,7 +72,7 @@ void EstadoHambrienta::actualizar(Mascota& mascota, float dt)
     }
 
     // El hambre prolongada desgasta el animo.
-    mascota.felicidad().modificar(-0.8f * dt);
+    mascota.felicidad().modificar(-0.12f * dt);
 
     if (mascota.salud().porDebajoDe(kUmbralEnfermedad))
     {
@@ -154,7 +154,7 @@ void EstadoDurmiendo::actualizar(Mascota& mascota, float dt)
     }
 
     // Dormir tambien repone un poco de salud.
-    mascota.salud().modificar(0.4f * dt);
+    mascota.salud().modificar(0.25f * dt);
 
     if (mascota.energia().enMaximo())
         mascota.cambiarEstado(TipoEstado::Normal);
@@ -227,10 +227,11 @@ void EstadoJugando::actualizar(Mascota& mascota, float dt)
 
     restante_ -= dt;
 
-    // Jugar sube el animo pero cuesta energia y ensucia.
-    mascota.felicidad().modificar(3.0f * dt);
-    mascota.energia().modificar(-2.0f * dt);
-    mascota.higiene().modificar(-1.5f * dt);
+    // Jugar cuesta energia y ensucia. El animo NO se sube aqui: de eso se
+    // encarga la actividad Jugando, que lo va entregando poco a poco. Si se
+    // sumara en los dos sitios, jugar valdria el doble de lo que dice.
+    mascota.energia().modificar(-1.2f * dt);
+    mascota.higiene().modificar(-0.9f * dt);
 
     if (restante_ <= 0.f)
     {

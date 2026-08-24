@@ -71,6 +71,19 @@ public:
     bool inmortalidad() const { return inmortalidad_; }
     void alternarInmortalidad();
 
+    // ------------------------------------------------------------ Metrica ---
+
+    /**
+     * @brief Panel de telemetria: que hace la mascota en cada momento.
+     *
+     * Se enciende desde el Admin_Menu y se queda encendido aunque el menu se
+     * cierre, que es justo lo que se quiere: sirve para mirar la partida
+     * normal y ver la actividad ("Comiendo", "Durmiendo") y su avance sin
+     * tener el panel entero tapando la pantalla.
+     */
+    bool metricaVisible() const { return metrica_; }
+    void alternarMetrica();
+
     /// Se llama en cada tick: mantiene vivas las trampas que lo necesitan.
     void aplicarPorTick(Mascota& mascota, float dt);
 
@@ -95,6 +108,7 @@ private:
     bool        desbloqueado_  = false;
     bool        visible_       = false;
     bool        inmortalidad_  = false;
+    bool        metrica_       = false;
     std::size_t avanceClave_   = 0;   ///< cuantas letras de kSecuencia van
     std::size_t indiceEscala_  = 0;
 

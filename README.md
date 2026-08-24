@@ -1,5 +1,7 @@
 # VirtualPet
 
+> Versión 1.2
+
 ![Pantalla de juego](./assets/images/screenshots/gameplay.png)
 
 ## Descripción
@@ -23,14 +25,22 @@ toda la estructura de clases.
   tiene sus propias tasas de desgaste, su sonido y una acción exclusiva; cada
   combinación de especie y género, su propia hoja de sprites.
 - **Nombre libre**: el campo empieza vacío y no se puede empezar sin escribir uno.
+- **Acciones progresivas**: comer, jugar, asear y medicar no son instantáneos.
+  La mascota se pone a ello, la animación se repite y la barra sube poco a poco.
+- **Despensa con cuatro comidas**, cada una con su cantidad y sus raciones. Lo
+  que alimenta decide también cuánto dura la animación de comer.
+- **Ritmo pausado**: las barras tardan entre 9 y 17 minutos en vaciarse, según
+  la especie. Es un juego de cuidar, no de vigilar.
 - **Efectos cruzados entre necesidades**: la salud no baja sola, baja cuando
   descuidas la comida, la higiene o el ánimo. Y sube si cuidas bien.
 - **Animación por hoja de sprites** descrita en un archivo de texto que se
-  puede ajustar sin recompilar, con animaciones de estado y de acción (el baño).
+  puede ajustar sin recompilar, con animaciones de estado y de acción (comer,
+  bañarse) que se repiten mientras dure la acción.
 - **Dibujo de respaldo**: las especies sin arte se dibujan con figuras
   geométricas, así que el juego siempre se ve.
 - **Guardado automático** al salir, en un archivo de texto legible.
-- **Admin_Menu**: menú de desarrollo para forzar cualquier estado y depurar.
+- **Admin_Menu**: menú de desarrollo para forzar cualquier estado, acelerar el
+  reloj y encender una **telemetría** que dice qué está haciendo la mascota.
 
 ## Requisitos del Sistema
 
@@ -190,6 +200,8 @@ mingw32-make clean
 ![Menu principal](./assets/images/screenshots/menu.png)
 ![Opciones](./assets/images/screenshots/opciones.png)
 ![Jugando](./assets/images/screenshots/jugando.png)
+![Despensa](./assets/images/screenshots/despensa.png)
+![Telemetria](./assets/images/screenshots/telemetria.png)
 ![Admin_Menu](./assets/images/screenshots/admin_menu.png)
 
 ## Colaboradores

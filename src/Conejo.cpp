@@ -12,8 +12,10 @@ Conejo::Conejo(std::string nombre, Genero genero)
 
 void Conejo::configurarRasgos()
 {
+    // Puntos por segundo. La saciedad tarda unos 9 minutos en vaciarse
+    // desde llena: el juego es de cuidar, no de vigilar.
     //                  saciedad  felicidad  energia  higiene
-    establecerTasasBase(-1.4f,    -1.0f,     -0.9f,   -0.9f);
+    establecerTasasBase(-0.18f,   -0.13f,    -0.11f,  -0.11f);
 
     felicidad().establecer(90.f);   // arranca de buen humor
     energia().establecer(100.f);

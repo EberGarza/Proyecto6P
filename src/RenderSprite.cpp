@@ -51,61 +51,49 @@ void RenderSprite::actualizar(const Mascota& mascota, float dt)
 {
     if (!listo_ || !sprite_) return;
 
-    const TipoEstado tipo = mascota.tipoEstado();
+    const TipoEstado tipo       = mascota.tipoEstado();
+    const Actividad  actividad  = mascota.actividad();
 
-    if (tipo != estadoDibujado_)
+    // Solo se rehace la animacion cuando cambia algo. Si se hiciera en cada
+    // fotograma, el reloj se reiniciaria siempre y el sprite se quedaria
+    // congelado en el primer cuadro.
+    if (tipo != estadoDibujado_ || actividad != actividadDibujada_)
     {
-        // Un cambio de estado manda sobre la accion en curso: si la mascota se
-        // duerme a mitad del bano, lo que hay que ver es que se durmio.
-        estadoDibujado_ = tipo;
-        enAccion_       = false;
-        volverAlEstado();
+        estadoDibujado_    = tipo;
+        actividadDibujada_ = actividad;
+
+        // Lo que hace la mascota manda sobre como esta: si esta comiendo, se
+        // la ve comer aunque su estado sea Hambrienta.
+        const std::string nombreAccion = animacionDeActividad(actividad);
+        const Animacion*  elegida      = nombreAccion.empty() ? nullptr
+                                                              : hoja_.accion(nombreAccion);
+
+        // Si la actividad no tiene dibujo, se cae al del estado; y si el estado
+        // tampoco lo tiene, al de Normal con el tinte que diga el archivo.
+        if (!elegida) elegida = hoja_.animacion(tipo);
+        if (!elegida) elegida = hoja_.animacion(TipoEstado::Normal);
+
+        ponerAnimacion(elegida, hoja_.tinte(tipo));
     }
 
     animacion_.actualizar(*sprite_, dt);
-
-    // Las animaciones de accion no van en bucle: cuando llegan al ultimo
-    // cuadro se devuelve el sprite al estado en el que este la mascota.
-    if (enAccion_ && animacion_.terminada())
-    {
-        enAccion_ = false;
-        volverAlEstado();
-    }
 
     // El cuadro que acaba de aplicarse trae su propio origen, asi que hay que
     // recolocar el sprite en la rejilla de pixeles despues de cada cambio.
     ajustarAPixel();
 }
 
-void RenderSprite::volverAlEstado()
+void RenderSprite::ponerAnimacion(const Animacion* nueva, sf::Color tinte)
 {
     if (!sprite_) return;
 
-    // Si el estado no tiene dibujo propio se recurre al de Normal; el tinte
-    // declarado en el archivo se encarga de diferenciarlo.
-    const Animacion* nueva = hoja_.animacion(estadoDibujado_);
-    if (!nueva) nueva = hoja_.animacion(TipoEstado::Normal);
     if (nueva) animacion_ = *nueva;
-
     animacion_.reiniciar();
-    sprite_->setColor(hoja_.tinte(estadoDibujado_));
-}
+    sprite_->setColor(tinte);
 
-void RenderSprite::reproducirAccion(const std::string& nombre)
-{
-    if (!listo_ || !sprite_) return;
-
-    const Animacion* accion = hoja_.accion(nombre);
-    if (!accion) return;          // esta hoja no dibuja esa accion
-
-    animacion_ = *accion;
-    animacion_.reiniciar();
-    enAccion_ = true;
-
-    // El primer cuadro se aplica ya, para que la accion se note en el mismo
-    // fotograma en que se pulsa el boton.
+    // El primer cuadro se aplica ya, para que el cambio se note en el mismo
+    // fotograma en que ocurre y no en el siguiente.
     animacion_.aplicarCuadroActual(*sprite_);
-    ajustarAPixel();
 }
 
 void RenderSprite::establecerPosicion(sf::Vector2f posicion)

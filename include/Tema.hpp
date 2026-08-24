@@ -140,6 +140,29 @@ inline PanelBiselado panelBiselado(sf::Vector2f posicion, sf::Vector2f tamano,
     return panel;
 }
 
+/**
+ * @brief Rejilla de lineas oscuras que imita el barrido de un monitor de tubo.
+ *
+ * Se dibuja al final, encima de todo lo demas. Son vertices y no una textura,
+ * asi que no gasta memoria de video ni se deforma si cambia la ventana.
+ *
+ * Vive aqui y no en una pantalla concreta porque lo usan las tres: si cada una
+ * se lo montara por su cuenta, bastaria con que alguien tocara el paso de una
+ * para que dejaran de parecer el mismo monitor.
+ */
+inline sf::VertexArray barridoCRT(sf::Vector2f tamano, std::uint8_t intensidad = 46)
+{
+    sf::VertexArray lineas(sf::PrimitiveType::Lines);
+    const sf::Color tinta(0, 0, 0, intensidad);
+
+    for (float y = 0.f; y < tamano.y; y += 3.f)
+    {
+        lineas.append(sf::Vertex{ { 0.f, y },       tinta });
+        lineas.append(sf::Vertex{ { tamano.x, y },  tinta });
+    }
+    return lineas;
+}
+
 /// Dibuja un texto con sombra dura desplazada, como los marcadores arcade.
 inline void dibujarConSombra(sf::RenderTarget& objetivo, const sf::Text& texto,
                              float desplazamiento = 2.f)

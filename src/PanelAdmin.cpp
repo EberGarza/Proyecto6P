@@ -53,11 +53,11 @@ PanelAdmin::PanelAdmin(const sf::Font& fuente, sf::Vector2f tamanoVentana)
     seccionUtiles_.setPosition({ x, origenPanel_.y + 190.f });
 
     diagnostico_.setFillColor(tema::kTexto);
-    diagnostico_.setPosition({ x, origenPanel_.y + 322.f });
+    diagnostico_.setPosition({ x, origenPanel_.y + 360.f });
     diagnostico_.setLineSpacing(1.35f);
 
     registro_.setFillColor(tema::kTextoTenue);
-    registro_.setPosition({ x + 260.f, origenPanel_.y + 322.f });
+    registro_.setPosition({ x + 260.f, origenPanel_.y + 360.f });
     registro_.setLineSpacing(1.35f);
 }
 
@@ -104,11 +104,17 @@ void PanelAdmin::enlazar(AdminMenu& admin, Mascota& mascota,
     agregar("Rellenar todo", [&admin, &mascota] { admin.rellenarAtributos(mascota); });
     agregar("Vaciar todo",   [&admin, &mascota] { admin.vaciarAtributos(mascota); });
     agregar("Revivir",       [&admin, &mascota] { admin.revivir(mascota); });
+    indiceInmortal_ = botones_.size();
     agregar("Inmortal",      [&admin]           { admin.alternarInmortalidad(); });
     agregar("Velocidad",     [&admin]           { admin.siguienteEscala(); });
     agregar("+1 dia",        [&admin, &mascota] { admin.envejecer(mascota, 1.f); });
     agregar("+100 monedas",  [&admin, &inventario] { admin.agregarMonedas(inventario, 100); });
     agregar("Modo figuras",  [&vista]           { vista.forzarProcedural(); });
+
+    // Enciende el panel de telemetria de la esquina, que sigue visible aunque
+    // se cierre este menu.
+    indiceMetrica_ = botones_.size();
+    agregar("Metrica",       [&admin]           { admin.alternarMetrica(); });
 
     enlazado_ = true;
 }
@@ -137,8 +143,15 @@ void PanelAdmin::actualizar(sf::Vector2f raton, const AdminMenu& admin,
     for (std::size_t i = 0; i < estados.size() && i < botones_.size(); ++i)
         botones_[i].establecerActivo(estados[i] == mascota.tipoEstado());
 
+    // Los dos botones que encienden algo se quedan marcados mientras dure.
+    if (indiceInmortal_ < botones_.size())
+        botones_[indiceInmortal_].establecerActivo(admin.inmortalidad());
+    if (indiceMetrica_ < botones_.size())
+        botones_[indiceMetrica_].establecerActivo(admin.metricaVisible());
+
     diagnostico_.setString(
         "Estado:      " + mascota.estado().nombre()                       + "\n" +
+        "Actividad:   " + nombreActividad(mascota.actividad())            + "\n" +
         "Especie:     " + mascota.especie()                               + "\n" +
         "Genero:      " + nombreGenero(mascota.genero())                  + "\n" +
         "Viva:        " + std::string(mascota.estaViva() ? "si" : "no")   + "\n" +

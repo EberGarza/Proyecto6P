@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Actividad.hpp"
 #include "HojaSprites.hpp"
 #include "RenderMascota.hpp"
 #include "TipoEstado.hpp"
@@ -19,6 +20,16 @@ namespace vp {
  * combinacion tiene su propio dibujo. Si un estado no tiene animacion propia,
  * se usa la de Normal con el tinte que indique el archivo.
  *
+ * Lo que se dibuja sale de dos preguntas, en este orden:
+ *
+ *   1. ¿Esta haciendo algo? Si la hoja tiene animacion para esa actividad
+ *      (comer, banarse), esa manda y se repite mientras dure.
+ *   2. Si no, se dibuja la animacion de su estado.
+ *
+ * El render no recibe ordenes de "reproduce esto ahora": mira a la mascota en
+ * cada fotograma y se sincroniza. Asi no hay forma de que la animacion y la
+ * mascota se queden diciendo cosas distintas.
+ *
  * Nota de SFML 3: sf::Sprite ya no se puede construir sin textura, y aqui la
  * textura no existe hasta que se lee el archivo. Por eso el sprite vive dentro
  * de un std::optional y se construye en cargar().
@@ -35,7 +46,6 @@ public:
     void actualizar(const Mascota& mascota, float dt) override;
     void establecerPosicion(sf::Vector2f posicion) override;
     void establecerEscala(float escala) override;
-    void reproducirAccion(const std::string& nombre) override;
 
     const char* nombreRender() const override { return "Sprites"; }
 
@@ -53,8 +63,8 @@ private:
     /// Coloca el sprite de forma que la textura arranque en un pixel entero.
     void ajustarAPixel();
 
-    /// Vuelve a la animacion que le toca al estado que se esta dibujando.
-    void volverAlEstado();
+    /// Cambia a la animacion indicada y reinicia su reloj.
+    void ponerAnimacion(const Animacion* nueva, sf::Color tinte);
 
     HojaSprites               hoja_;
     Animacion                 animacion_;   ///< copia de trabajo, con su propio reloj
@@ -62,11 +72,10 @@ private:
     sf::Vector2f              posicion_       { 0.f, 0.f };
     float                     escalaHoja_     = 1.f;
     float                     escalaExterna_  = 1.f;
-    TipoEstado                estadoDibujado_ = TipoEstado::Normal;
-    bool                      listo_          = false;
-
-    /// Mientras dura una accion, animacion_ es la suya y no la del estado.
-    bool                      enAccion_       = false;
+    /// Lo ultimo que se dibujo, para no reiniciar la animacion cada fotograma.
+    TipoEstado                estadoDibujado_    = TipoEstado::Normal;
+    Actividad                 actividadDibujada_ = Actividad::Ninguna;
+    bool                      listo_             = false;
 };
 
 } // namespace vp

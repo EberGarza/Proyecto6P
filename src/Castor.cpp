@@ -12,8 +12,10 @@ Castor::Castor(std::string nombre, Genero genero)
 
 void Castor::configurarRasgos()
 {
+    // Aguanta mas que el conejo: unos 17 minutos hasta quedarse sin comida.
+    // A cambio se aburre antes, que es lo suyo.
     //                  saciedad  felicidad  energia  higiene
-    establecerTasasBase(-0.8f,    -1.2f,     -0.6f,   -0.7f);
+    establecerTasasBase(-0.10f,   -0.15f,    -0.08f,  -0.09f);
 
     energia().establecer(100.f);
     felicidad().establecer(70.f);   // es serio, cuesta animarlo

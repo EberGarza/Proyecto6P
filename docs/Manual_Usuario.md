@@ -4,7 +4,10 @@
 
 Una mascota virtual que vive en tu ordenador y depende de que la cuides.
 Puedes tener un conejo o un castor, macho o hembra, y ponerle el nombre que
-quieras. Tiene cinco necesidades que se van agotando solas con el tiempo, y su
+quieras. Va despacio a propósito: las barras tardan entre nueve y diecisiete
+minutos en vaciarse, así que no hay que estar pendiente todo el rato.
+
+Tiene cinco necesidades que se van agotando solas con el tiempo, y su
 estado de ánimo y su salud dependen de lo bien que las atiendas. Si la
 descuidas lo suficiente, se enferma. Y si la enfermedad no se trata, muere.
 
@@ -96,8 +99,32 @@ El **último botón cambia según la especie**: el conejo puede *Saltar*, que le
 sube mucho el ánimo a cambio de energía y de ensuciarse; el castor puede
 *Roer*, que le anima y le abre el apetito.
 
-Al pulsar **Asear** la mascota se baña: aparece llena de espuma unos segundos y
-después vuelve a lo que estaba haciendo.
+### Las acciones tardan
+
+Comer, jugar, asear y medicar **no son instantáneos**. La mascota se pone a
+hacerlo, la animación se repite mientras dura y la barra sube poco a poco. Un
+banquete de 60 puntos tarda el doble que una zanahoria de 30.
+
+Mientras esté ocupada no acepta otra cosa: si insistes, lo dice en la bitácora.
+Y si la barra se llena antes de terminar, para sola.
+
+### La despensa
+
+![Despensa](../assets/images/screenshots/despensa.png)
+
+Al pulsar **Alimentar** se abre la despensa, con lo que queda y lo que alimenta
+cada cosa. Se elige con el ratón o con las teclas `1` a `4`:
+
+| Comida | Sube | Raciones |
+|--------|------|----------|
+| Pienso | 15 | infinitas |
+| Una zanahoria | 30 | 6 |
+| Corteza | 30 | 6 |
+| Un banquete | 60 | 2 |
+
+Si le das justo lo que le gusta a su especie, se lleva un extra de ánimo. Las
+raciones se gastan; el pienso no se acaba nunca, así que nunca te quedas sin
+nada que darle.
 
 Abajo a la izquierda, la **bitácora** va contando lo que pasa como un teletipo:
 qué comió, cuándo se durmió, cuándo se puso enferma.

@@ -4,8 +4,9 @@
 #include "Castor.hpp"
 #include "Conejo.hpp"
 #include "GestorGuardado.hpp"
-#include "HojaSprites.hpp"
+#include "Mosaico.hpp"
 #include "RenderSprite.hpp"
+#include "Utilidades.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -28,12 +29,16 @@ PantallaJuego::PantallaJuego(const sf::Font& fuente,
     , vista_(fuente)
     , hud_(fuente, tamanoVentana, Hud::kAlturaTira)
     , panelAdmin_(fuente, tamanoVentana)
+    , panelComida_(fuente, tamanoVentana)
+    , tituloMetrica_(fuente, "TELEMETRIA", tema::kTextoChico)
+    , textoMetrica_(fuente, "", tema::kTextoChico)
     , pie_(fuente, "TECLAS 1-6  ACCIONES     ESC  SALIR", 13)
     , anuncio_(fuente, "", 64)
     , tamanoVentana_(tamanoVentana)
 {
     construirEscenario();
     construirBarrido();
+    construirMetrica();
 
     // El escenario ocupa la franja entre el marcador y la botonera.
     const float altoEscenario = tamanoVentana.y - Hud::kAlturaTira - kAltoBotonera;
@@ -61,62 +66,23 @@ PantallaJuego::PantallaJuego(const sf::Font& fuente,
 
 void PantallaJuego::construirEscenario()
 {
-    const auto ancho = static_cast<unsigned>(tamanoVentana_.x);
-    const auto alto  = static_cast<unsigned>(tamanoVentana_.y);
-    if (!lienzoEscenario_.resize({ ancho, alto })) return;
+    // El mismo mosaico del menu y de las opciones, pero con la hoja de ESTA
+    // mascota: el fondo cambia con la especie y el genero elegidos.
+    if (!mascota_) return;
 
-    lienzoEscenario_.clear(tema::kFondo);
+    if (!componerMosaico(lienzoEscenario_, tamanoVentana_,
+                         { RenderSprite::rutaDe(mascota_->claveArte()) },
+                         tema::kFondo,
+                         13,      // mas tenue que en el menu: aqui hay que ver a la mascota
+                         150.f))
+        return;
 
-    // Un patron repetido con la propia mascota, como el del menu de inicio.
-    // Al usar su hoja, el fondo cambia con la especie y el genero elegidos.
-    HojaSprites hoja;
-    if (mascota_ && hoja.cargar(RenderSprite::rutaDe(mascota_->claveArte())))
-    {
-        if (const Animacion* idle = hoja.animacion(TipoEstado::Normal))
-        {
-            sf::Sprite sello(hoja.textura());
-            idle->aplicarCuadroActual(sello);
-            sello.setColor(sf::Color(255, 255, 255, 13));
-            sello.setScale({ 2.f, 2.f });
-
-            // El paso va con el tamano del sello (64 px por 2), con aire de
-            // sobra: si se acercan mas, el patron deja de leerse como fondo.
-            const float paso = 150.f;
-            int fila = 0;
-            for (float y = 20.f; y < tamanoVentana_.y + paso; y += paso, ++fila)
-            {
-                const float desfase = (fila % 2 == 0) ? 0.f : paso / 2.f;
-                for (float x = 20.f + desfase; x < tamanoVentana_.x + paso; x += paso)
-                {
-                    sello.setRotation(sf::degrees(((fila + static_cast<int>(x)) % 5) * 7.f - 14.f));
-                    sello.setPosition({ x, y });
-                    lienzoEscenario_.draw(sello);
-                }
-            }
-        }
-    }
-
-    // Antes habia aqui una linea de suelo dibujada a mano. Ya no hace falta:
-    // los sprites nuevos traen su propia sombra, y la linea quedaba a otra
-    // altura, como si la mascota flotara por encima del suelo.
-
-    lienzoEscenario_.display();
     escenario_.emplace(lienzoEscenario_.getTexture());
 }
 
 void PantallaJuego::construirBarrido()
 {
-    // Lineas horizontales oscuras cada dos pixeles. Es el truco mas barato que
-    // hay para que una pantalla parezca un monitor de tubo.
-    barrido_.setPrimitiveType(sf::PrimitiveType::Lines);
-    barrido_.clear();
-
-    for (float y = 0.f; y < tamanoVentana_.y; y += 3.f)
-    {
-        const sf::Color tinta(0, 0, 0, 46);
-        barrido_.append(sf::Vertex{ { 0.f, y }, tinta });
-        barrido_.append(sf::Vertex{ { tamanoVentana_.x, y }, tinta });
-    }
+    barrido_ = tema::barridoCRT(tamanoVentana_);
 }
 
 void PantallaJuego::anunciar(const std::string& texto, sf::Color color)
@@ -155,19 +121,13 @@ void PantallaJuego::crearBotones()
         x += tamano.x + hueco;
     };
 
-    VistaMascota* vista = &vista_;
+    // Las acciones con objeto salen del inventario, no de un numero fijo: asi
+    // cada comida alimenta lo suyo y se gasta al usarse.
+    agregar("ALIMENTAR", [this] { abrirDespensa(); },            true);
+    agregar("JUGAR",     [this] { usarPrimero("Juguete"); },     true);
+    agregar("ASEAR",     [this] { usarPrimero("Aseo"); },        true);
+    agregar("MEDICAR",   [this] { usarPrimero("Medicina"); },    true);
 
-    agregar("ALIMENTAR", [m] { m->alimentar(25.f); }, true);
-    agregar("JUGAR",     [m] { m->jugar(20.f); },     true);
-
-    // Asear es la unica accion con animacion propia en la hoja: al pulsarla la
-    // mascota se bana un momento y despues vuelve a su estado. Si la hoja no
-    // trae esa animacion, reproducirAccion no hace nada y la accion funciona
-    // igual, solo que sin dibujo especial.
-    agregar("ASEAR",     [m, vista] { if (m->asear(40.f)) vista->reproducirAccion("Aseo"); },
-            true);
-
-    agregar("MEDICAR",   [m] { m->medicar(35.f); },   true);
     agregar("DORMIR",    [m] { if (m->tipoEstado() == TipoEstado::Durmiendo) m->despertar();
                                else                                          m->dormir(); }, true);
     agregar("ACARICIAR", [m] { m->acariciar(); },     true);
@@ -178,6 +138,58 @@ void PantallaJuego::crearBotones()
         agregar("SALTAR", [conejo] { conejo->saltar(); }, false);
     else if (auto* castor = dynamic_cast<Castor*>(m))
         agregar("ROER", [castor] { castor->roer(); }, false);
+}
+
+// ------------------------------------------------------------- Inventario ---
+
+void PantallaJuego::abrirDespensa()
+{
+    if (!mascota_->estaViva()) return;
+
+    panelComida_.refrescar(inventario_, [this](std::size_t indice)
+    {
+        inventario_.usar(indice, *mascota_);
+        inventario_.limpiarAgotados();
+    });
+    panelComida_.abrir();
+}
+
+void PantallaJuego::usarPrimero(const std::string& categoria)
+{
+    // Para juguete, medicina y jabon no hace falta elegir: se coge el primero
+    // que quede de esa categoria. La despensa solo se abre para la comida,
+    // que es donde la eleccion cambia algo.
+    const auto indices = inventario_.indicesPorCategoria(categoria);
+    if (indices.empty())
+    {
+        mascota_->registrar("No queda nada de " + categoria + ".");
+        return;
+    }
+
+    inventario_.usar(indices.front(), *mascota_);
+    inventario_.limpiarAgotados();
+}
+
+void PantallaJuego::construirMetrica()
+{
+    const sf::Vector2f tamano(228.f, 96.f);
+    const sf::Vector2f pos(tamanoVentana_.x - tamano.x - 20.f, Hud::kAlturaTira + 14.f);
+
+    panelMetrica_ = tema::panelBiselado(pos, tamano, tema::kPanelBorde);
+
+    tituloMetrica_.setFillColor(tema::kAdmin);
+    tituloMetrica_.setPosition({ pos.x + 12.f, pos.y + 8.f });
+
+    textoMetrica_.setFillColor(tema::kTexto);
+    textoMetrica_.setLineSpacing(1.3f);
+    textoMetrica_.setPosition({ pos.x + 12.f, pos.y + 30.f });
+
+    // Barrita de avance de la actividad, al pie del panel.
+    fondoProgreso_ = tema::paralelogramo({ pos.x + 12.f, pos.y + tamano.y - 20.f },
+                                         { tamano.x - 24.f, 10.f }, 4.f);
+    fondoProgreso_.setFillColor(tema::kBarraFondo);
+    origenProgreso_ = { pos.x + 12.f, pos.y + tamano.y - 20.f };
+    anchoProgreso_  = tamano.x - 24.f;
 }
 
 
@@ -207,12 +219,10 @@ void PantallaJuego::manejarEvento(const sf::Event& evento)
 
         const sf::Vector2f punto(clic->position);
 
-        // El Admin_Menu esta por encima: si esta abierto, se queda el clic.
-        if (admin_.visible())
-        {
-            panelAdmin_.procesarClic(punto);
-            return;
-        }
+        // Los paneles estan por encima de la botonera: si hay uno abierto, se
+        // queda el clic para que no se cuele a los botones de debajo.
+        if (admin_.visible())      { panelAdmin_.procesarClic(punto);  return; }
+        if (panelComida_.visible()) { panelComida_.procesarClic(punto); return; }
 
         for (Boton& boton : botones_)
             if (boton.procesarClic(punto)) break;
@@ -229,6 +239,22 @@ void PantallaJuego::manejarEvento(const sf::Event& evento)
 
     if (const auto* tecla = evento.getIf<sf::Event::KeyPressed>())
     {
+        // Con la despensa abierta, los numeros eligen comida en vez de lanzar
+        // las acciones de siempre.
+        if (panelComida_.visible())
+        {
+            switch (tecla->code)
+            {
+                case sf::Keyboard::Key::Num1: panelComida_.elegirPorIndice(0); break;
+                case sf::Keyboard::Key::Num2: panelComida_.elegirPorIndice(1); break;
+                case sf::Keyboard::Key::Num3: panelComida_.elegirPorIndice(2); break;
+                case sf::Keyboard::Key::Num4: panelComida_.elegirPorIndice(3); break;
+                case sf::Keyboard::Key::Escape: panelComida_.cerrar();         break;
+                default: break;
+            }
+            return;
+        }
+
         switch (tecla->code)
         {
             case sf::Keyboard::Key::F1:   admin_.alternarVisible();  break;
@@ -238,12 +264,10 @@ void PantallaJuego::manejarEvento(const sf::Event& evento)
                 else                  solicitar(Transicion::Salir);
                 break;
 
-            case sf::Keyboard::Key::Num1: mascota_->alimentar(25.f); break;
-            case sf::Keyboard::Key::Num2: mascota_->jugar(20.f);     break;
-            case sf::Keyboard::Key::Num3:
-                if (mascota_->asear(40.f)) vista_.reproducirAccion("Aseo");
-                break;
-            case sf::Keyboard::Key::Num4: mascota_->medicar(35.f);   break;
+            case sf::Keyboard::Key::Num1: abrirDespensa();           break;
+            case sf::Keyboard::Key::Num2: usarPrimero("Juguete");    break;
+            case sf::Keyboard::Key::Num3: usarPrimero("Aseo");       break;
+            case sf::Keyboard::Key::Num4: usarPrimero("Medicina");   break;
 
             case sf::Keyboard::Key::Num5:
                 if (mascota_->tipoEstado() == TipoEstado::Durmiendo) mascota_->despertar();
@@ -307,8 +331,30 @@ void PantallaJuego::actualizar(float dt)
         anuncio_.setScale({ escala, escala });
     }
 
+    panelComida_.actualizar(raton_);
+
     if (admin_.visible())
         panelAdmin_.actualizar(raton_, admin_, *mascota_, vista_, fps_);
+
+    if (admin_.metricaVisible())
+        actualizarMetrica();
+}
+
+void PantallaJuego::actualizarMetrica()
+{
+    const Actividad actividad = mascota_->actividad();
+    const float     avance    = mascota_->progresoActividad();
+
+    textoMetrica_.setString(
+        "Actividad: " + nombreActividad(actividad) + "\n" +
+        "Estado:    " + mascota_->estado().nombre() + "\n" +
+        "Avance:    " + util::aTexto(avance * 100.f) + "%");
+
+    // La barrita solo tiene sentido en las actividades con cuenta atras:
+    // durmiendo no hay un final calculable, asi que se deja vacia.
+    barraProgreso_ = tema::paralelogramo(origenProgreso_,
+                                         { anchoProgreso_ * avance, 10.f }, 4.f);
+    barraProgreso_.setFillColor(mascota_->ocupada() ? tema::kAcento : tema::kBarraFondo);
 }
 
 // --------------------------------------------------------------- Dibujado ---
@@ -323,15 +369,27 @@ void PantallaJuego::dibujar(sf::RenderTarget& objetivo) const
 
     objetivo.draw(hud_);
 
+    // Telemetria: la enciende el Admin_Menu y se queda aunque el menu se cierre.
+    if (admin_.metricaVisible())
+    {
+        panelMetrica_.dibujar(objetivo);
+        tema::dibujarConSombra(objetivo, tituloMetrica_);
+        objetivo.draw(textoMetrica_);
+        objetivo.draw(fondoProgreso_);
+        objetivo.draw(barraProgreso_);
+    }
+
     panelBotonera_.dibujar(objetivo);
     for (const Boton& boton : botones_)
         objetivo.draw(boton);
 
     objetivo.draw(pie_);
 
-    // El barrido va encima de todo el juego, pero por debajo del panel de
-    // desarrollo: ahi estorbaria para leer los numeros.
+    // El barrido va encima de todo el juego, pero por debajo de los paneles:
+    // ahi estorbaria para leer los numeros.
     objetivo.draw(barrido_);
+
+    objetivo.draw(panelComida_);
 
     if (admin_.visible())
         objetivo.draw(panelAdmin_);

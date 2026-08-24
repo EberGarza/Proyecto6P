@@ -32,7 +32,11 @@ public:
     const std::string& descripcion() const { return descripcion_; }
     int  precio() const                    { return precio_; }
     int  usosRestantes() const             { return usosRestantes_; }
-    bool agotado() const                   { return usosRestantes_ <= 0; }
+    /// true si ya no se puede usar. Un objeto de usos ilimitados NUNCA se
+    /// agota: si esto devolviera solo "usosRestantes_ <= 0", cada sitio que
+    /// pregunte tendria que acordarse de anadir "&& !esInfinito()", y basta
+    /// con que uno se olvide para que el jabon desaparezca del inventario.
+    bool agotado() const                   { return !usosInfinitos_ && usosRestantes_ <= 0; }
     bool esInfinito() const                { return usosInfinitos_; }
 
 protected:

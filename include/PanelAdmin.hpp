@@ -4,6 +4,7 @@
 
 #include <SFML/Graphics.hpp>
 
+#include <cstddef>
 #include <vector>
 
 namespace vp {
@@ -54,8 +55,14 @@ private:
     sf::Vector2f       origenPanel_;
     bool               enlazado_ = false;
 
+    /// Posicion en botones_ de los dos interruptores, para poder marcarlos
+    /// mientras esten encendidos. Se guarda el indice y no la etiqueta:
+    /// renombrar un boton no deberia romper esto en silencio.
+    std::size_t        indiceInmortal_ = 0;
+    std::size_t        indiceMetrica_  = 0;
+
     static constexpr float kAncho = 560.f;
-    static constexpr float kAlto  = 508.f;
+    static constexpr float kAlto  = 546.f;
 };
 
 } // namespace vp

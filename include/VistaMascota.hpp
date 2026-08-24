@@ -32,9 +32,6 @@ public:
     void establecerPosicion(sf::Vector2f posicion);
     void establecerEscala(float escala);
 
-    /// Lanza una vez la animacion de una accion ("Aseo"), si la hoja la trae.
-    void reproducirAccion(const std::string& nombre);
-
     /// Cambia de estrategia a mano (lo usa el Admin_Menu).
     void forzarProcedural();
 

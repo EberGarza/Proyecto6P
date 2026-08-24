@@ -17,7 +17,7 @@ Alimento::Alimento(std::string nombre, int precio, float nutricion, int usos)
 
 bool Alimento::aplicar(Mascota& mascota)
 {
-    if (!mascota.alimentar(nutricion_)) return false;
+    if (!mascota.alimentar(nutricion_, nombre())) return false;
 
     // Extra de felicidad si es justo lo que le gusta a esta especie.
     if (mascota.comidaFavorita().find(nombre()) != std::string::npos ||
@@ -44,7 +44,7 @@ Juguete::Juguete(std::string nombre, int precio, float diversion, int usos)
 
 bool Juguete::aplicar(Mascota& mascota)
 {
-    return mascota.jugar(diversion_);
+    return mascota.jugar(diversion_, nombre());
 }
 
 std::string Juguete::detalle() const
@@ -62,7 +62,7 @@ Medicina::Medicina(std::string nombre, int precio, float curacion, int usos)
 
 bool Medicina::aplicar(Mascota& mascota)
 {
-    return mascota.medicar(curacion_);
+    return mascota.medicar(curacion_, nombre());
 }
 
 std::string Medicina::detalle() const
@@ -80,7 +80,7 @@ ArticuloAseo::ArticuloAseo(std::string nombre, int precio, float limpieza, int u
 
 bool ArticuloAseo::aplicar(Mascota& mascota)
 {
-    return mascota.asear(limpieza_);
+    return mascota.asear(limpieza_, nombre());
 }
 
 std::string ArticuloAseo::detalle() const

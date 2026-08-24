@@ -53,11 +53,6 @@ void VistaMascota::establecerEscala(float escala)
     if (render_) render_->establecerEscala(escala);
 }
 
-void VistaMascota::reproducirAccion(const std::string& nombre)
-{
-    if (render_) render_->reproducirAccion(nombre);
-}
-
 void VistaMascota::forzarProcedural()
 {
     render_        = std::make_unique<RenderProcedural>(fuente_);

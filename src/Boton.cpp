@@ -66,6 +66,13 @@ bool Boton::procesarClic(sf::Vector2f posicionClic)
 {
     if (!habilitado_ || !contiene(posicionClic)) return false;
 
+    return accionar();
+}
+
+bool Boton::accionar()
+{
+    if (!habilitado_) return false;
+
     if (accion_) accion_();
     return true;
 }

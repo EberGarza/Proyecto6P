@@ -152,6 +152,13 @@ void AdminMenu::alternarInmortalidad()
     anotar(inmortalidad_ ? "Inmortalidad activada." : "Inmortalidad desactivada.");
 }
 
+void AdminMenu::alternarMetrica()
+{
+    metrica_ = !metrica_;
+    anotar(metrica_ ? "Metrica de actividad encendida."
+                    : "Metrica de actividad apagada.");
+}
+
 void AdminMenu::aplicarPorTick(Mascota& mascota, float)
 {
     if (!inmortalidad_) return;

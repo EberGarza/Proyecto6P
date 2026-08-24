@@ -2,7 +2,6 @@
 
 #include <SFML/Graphics.hpp>
 
-#include <string>
 
 namespace vp {
 
@@ -20,20 +19,12 @@ class RenderMascota : public sf::Drawable
 public:
     ~RenderMascota() override = default;
 
-    /// Sincroniza el dibujo con el estado de la mascota y avanza la animacion.
+    /// Sincroniza el dibujo con la mascota (su estado y lo que este haciendo)
+    /// y avanza la animacion.
     virtual void actualizar(const Mascota& mascota, float dt) = 0;
 
     virtual void establecerPosicion(sf::Vector2f posicion) = 0;
     virtual void establecerEscala(float escala)            = 0;
-
-    /**
-     * @brief Reproduce una vez la animacion de una accion, si existe.
-     *
-     * No es virtual pura a proposito: una estrategia que no sepa dibujar
-     * acciones (el dibujo procedural) no tiene por que implementarla, y quien
-     * la llama no deberia preguntar antes. Sin animacion, no pasa nada.
-     */
-    virtual void reproducirAccion(const std::string& nombre) { (void)nombre; }
 
     /// Nombre de la estrategia, para mostrarlo en el Admin_Menu.
     virtual const char* nombreRender() const = 0;

@@ -1,7 +1,9 @@
 #include "PantallaOpciones.hpp"
 
 #include "GestorGuardado.hpp"
+#include "Mosaico.hpp"
 
+#include <cmath>
 #include <filesystem>
 #include <string>
 
@@ -10,11 +12,14 @@ namespace vp {
 namespace {
 
 const sf::Color kAmarillo(255, 220, 80);
-const sf::Color kFondo(38, 26, 54);
+const sf::Color kFondoBase(38, 26, 54);
 
 constexpr unsigned kTamTitulo = 44;
-constexpr unsigned kTamFila   = 30;
-constexpr float    kSepFila   = 26.f;
+constexpr unsigned kTamFila   = 22;
+
+/// Anchos de la barra de volumen dentro de su placa.
+constexpr float kAnchoBarra = 150.f;
+constexpr float kAltoBarra  = 14.f;
 
 } // namespace sin nombre
 
@@ -22,25 +27,20 @@ PantallaOpciones::PantallaOpciones(const sf::Font& fuente, sf::Vector2f tamanoVe
     : fuente_(fuente)
     , tamanoVentana_(tamanoVentana)
     , titulo_(fuente, "OPCIONES", kTamTitulo)
-    , pie_(fuente, "Izquierda y derecha ajustan   -   Escape vuelve al menu", 16)
+    , pie_(fuente, "ARRIBA/ABAJO ELEGIR    IZQ/DER AJUSTAR    ESC VOLVER",
+           tema::kTextoChico)
 {
+    // El mismo mosaico del menu, para que las dos pantallas se reconozcan.
+    if (componerMosaico(lienzoFondo_, tamanoVentana_,
+                        { "assets/images/conejo_hembra.txt",
+                          "assets/images/castor_hembra.txt" },
+                        kFondoBase))
+        fondo_.emplace(lienzoFondo_.getTexture());
+
     velo_.setSize(tamanoVentana_);
-    velo_.setFillColor(kFondo);
+    velo_.setFillColor(sf::Color(20, 12, 30, 130));
 
-    titulo_.setFillColor(kAmarillo);
-    const sf::FloatRect lt = titulo_.getLocalBounds();
-    titulo_.setOrigin({ lt.position.x + lt.size.x / 2.f, lt.position.y });
-    titulo_.setPosition({ tamanoVentana_.x / 2.f, 90.f });
-
-    pie_.setFillColor(sf::Color(255, 255, 255, 130));
-    const sf::FloatRect lp = pie_.getLocalBounds();
-    pie_.setOrigin({ lp.position.x + lp.size.x / 2.f, 0.f });
-    pie_.setPosition({ tamanoVentana_.x / 2.f, tamanoVentana_.y - 46.f });
-
-    const auto total = static_cast<std::size_t>(Fila::Total);
-    filas_.reserve(total);
-    for (std::size_t i = 0; i < total; ++i)
-        filas_.emplace_back(fuente_, "", kTamFila);
+    construirInterfaz();
 
     if (musica_.load("assets/sound/MenuOpciones.ogg"))
     {
@@ -52,27 +52,105 @@ PantallaOpciones::PantallaOpciones(const sf::Font& fuente, sf::Vector2f tamanoVe
     refrescarTextos();
 }
 
+void PantallaOpciones::construirInterfaz()
+{
+    // --- Marquesina del titulo, igual que en el menu -------------------------
+    const sf::Vector2f tamanoMarco(420.f, 84.f);
+    const sf::Vector2f posMarco((tamanoVentana_.x - tamanoMarco.x) / 2.f, 52.f);
+    marquesina_ = tema::panelBiselado(posMarco, tamanoMarco, tema::kPanelBorde);
+
+    titulo_.setFillColor(kAmarillo);
+    const sf::FloatRect lt = titulo_.getLocalBounds();
+    titulo_.setOrigin({ lt.position.x + lt.size.x / 2.f,
+                        lt.position.y + lt.size.y / 2.f });
+    titulo_.setPosition({ tamanoVentana_.x / 2.f, posMarco.y + tamanoMarco.y / 2.f });
+
+    // --- Filas ---------------------------------------------------------------
+    const auto  total     = static_cast<std::size_t>(Fila::Total);
+    const float altoTotal = total * kAltoPlaca + (total - 1) * kHuecoPlaca;
+    const float inicioY   = (tamanoVentana_.y - altoTotal) / 2.f + 30.f;
+    const float x         = (tamanoVentana_.x - kAnchoPlaca) / 2.f;
+
+    placas_.reserve(total);
+    etiquetas_.reserve(total);
+    valores_.reserve(total);
+
+    for (std::size_t i = 0; i < total; ++i)
+    {
+        const float y = inicioY + i * (kAltoPlaca + kHuecoPlaca);
+
+        placas_.push_back(tema::paralelogramo({ x, y }, { kAnchoPlaca, kAltoPlaca }));
+
+        etiquetas_.emplace_back(fuente_, "", kTamFila);
+        etiquetas_.back().setPosition({ x + 24.f, y + 12.f });
+
+        valores_.emplace_back(fuente_, "", kTamFila);
+        valores_.back().setPosition({ x + 250.f, y + 12.f });
+    }
+
+    // La barra del volumen va en su fila, a la derecha de la etiqueta.
+    const float yVolumen = inicioY + static_cast<float>(Fila::Volumen) *
+                                     (kAltoPlaca + kHuecoPlaca);
+    origenVolumen_ = { x + kAnchoPlaca - 28.f - 52.f - kAnchoBarra,
+                       yVolumen + (kAltoPlaca - kAltoBarra) / 2.f };
+    anchoVolumen_  = kAnchoBarra;
+
+    fondoVolumen_ = tema::paralelogramo(origenVolumen_, { kAnchoBarra, kAltoBarra }, 5.f);
+    fondoVolumen_.setFillColor(tema::kBarraFondo);
+    fondoVolumen_.setOutlineThickness(1.f);
+    fondoVolumen_.setOutlineColor(tema::kPanelBorde);
+
+    // --- Senalador -----------------------------------------------------------
+    senalador_.setPointCount(3);
+    senalador_.setPoint(0, { 0.f,  0.f });
+    senalador_.setPoint(1, { 14.f, 8.f });
+    senalador_.setPoint(2, { 0.f, 16.f });
+    senalador_.setFillColor(kAmarillo);
+
+    // --- Tira inferior -------------------------------------------------------
+    const float altoTira = 34.f;
+    tiraPie_ = tema::panelBiselado({ 0.f, tamanoVentana_.y - altoTira },
+                                   { tamanoVentana_.x, altoTira });
+
+    pie_.setFillColor(tema::kTextoSuave);
+    const sf::FloatRect lp = pie_.getLocalBounds();
+    pie_.setOrigin({ lp.position.x + lp.size.x / 2.f, 0.f });
+    pie_.setPosition({ tamanoVentana_.x / 2.f, tamanoVentana_.y - altoTira + 10.f });
+
+    barrido_ = tema::barridoCRT(tamanoVentana_);
+}
+
 void PantallaOpciones::refrescarTextos()
 {
-    const std::string etiquetas[] = {
-        std::string("Musica:  ") + (musicaActiva_ ? "activada" : "silenciada"),
-        "Volumen:  " + std::to_string(volumen_),
-        borrada_ ? "Partida borrada" : "Borrar partida guardada",
-        "Volver"
+    const std::string etiquetas[] = { "Musica", "Volumen", "Partida guardada", "Volver" };
+    const std::string valores[]   = {
+        musicaActiva_ ? "activada" : "silenciada",
+        std::to_string(volumen_),
+        borrada_ ? "borrada" : "borrar",
+        ""
     };
 
-    const float altoTotal = filas_.size() * kTamFila + (filas_.size() - 1) * kSepFila;
-    const float inicioY   = (tamanoVentana_.y - altoTotal) / 2.f;
+    const float derecha = (tamanoVentana_.x - kAnchoPlaca) / 2.f + kAnchoPlaca - 28.f;
 
-    for (std::size_t i = 0; i < filas_.size(); ++i)
+    for (std::size_t i = 0; i < placas_.size(); ++i)
     {
-        filas_[i].setString(etiquetas[i]);
+        etiquetas_[i].setString(etiquetas[i]);
+        valores_[i].setString(valores[i]);
 
-        const sf::FloatRect limites = filas_[i].getLocalBounds();
-        filas_[i].setOrigin({ limites.position.x + limites.size.x / 2.f, limites.position.y });
-        filas_[i].setPosition({ tamanoVentana_.x / 2.f,
-                                inicioY + i * (kTamFila + kSepFila) });
+        // Los valores se alinean por su borde derecho, no por el izquierdo:
+        // asi quedan en columna y ninguno se come la etiqueta de su fila por
+        // largo que sea el texto.
+        sf::Text& valor = valores_[i];
+        const sf::FloatRect lv = valor.getLocalBounds();
+        valor.setOrigin({ lv.position.x + lv.size.x, lv.position.y });
+        valor.setPosition({ derecha, valor.getPosition().y });
     }
+
+    // La barra se recorta a la fraccion del volumen actual.
+    const float fraccion = static_cast<float>(volumen_) / 100.f;
+    barraVolumen_ = tema::paralelogramo(origenVolumen_,
+                                        { anchoVolumen_ * fraccion, kAltoBarra }, 5.f);
+    barraVolumen_.setFillColor(musicaActiva_ ? kAmarillo : tema::kTextoTenue);
 }
 
 void PantallaOpciones::ajustar(int direccion)
@@ -135,7 +213,7 @@ void PantallaOpciones::manejarEvento(const sf::Event& evento)
     if (const auto* tecla = evento.getIf<sf::Event::KeyPressed>())
     {
         using Tecla = sf::Keyboard::Key;
-        const int total = static_cast<int>(filas_.size());
+        const int total = static_cast<int>(placas_.size());
 
         switch (tecla->code)
         {
@@ -168,8 +246,14 @@ void PantallaOpciones::manejarEvento(const sf::Event& evento)
     if (const auto* movimiento = evento.getIf<sf::Event::MouseMoved>())
     {
         const sf::Vector2f punto(movimiento->position);
-        for (std::size_t i = 0; i < filas_.size(); ++i)
-            if (filas_[i].getGlobalBounds().contains(punto))
+
+        // Igual que en el menu: solo cuenta si el raton se movio de verdad.
+        const bool seMovio = (punto != raton_);
+        raton_ = punto;
+        if (!seMovio) return;
+
+        for (std::size_t i = 0; i < placas_.size(); ++i)
+            if (placas_[i].getGlobalBounds().contains(punto))
                 seleccion_ = i;
         return;
     }
@@ -179,9 +263,9 @@ void PantallaOpciones::manejarEvento(const sf::Event& evento)
         if (clic->button != sf::Mouse::Button::Left) return;
 
         const sf::Vector2f punto(clic->position);
-        for (std::size_t i = 0; i < filas_.size(); ++i)
+        for (std::size_t i = 0; i < placas_.size(); ++i)
         {
-            if (filas_[i].getGlobalBounds().contains(punto))
+            if (placas_[i].getGlobalBounds().contains(punto))
             {
                 seleccion_ = i;
                 activar();
@@ -191,19 +275,58 @@ void PantallaOpciones::manejarEvento(const sf::Event& evento)
     }
 }
 
-void PantallaOpciones::actualizar(float)
+void PantallaOpciones::actualizar(float dt)
 {
-    for (std::size_t i = 0; i < filas_.size(); ++i)
-        filas_[i].setFillColor(i == seleccion_ ? kAmarillo : sf::Color::White);
+    reloj_ += dt;
+
+    for (std::size_t i = 0; i < placas_.size(); ++i)
+    {
+        const bool elegida = (i == seleccion_);
+
+        placas_[i].setFillColor(elegida ? tema::kBotonHover : tema::kBoton);
+        placas_[i].setOutlineThickness(2.f);
+        placas_[i].setOutlineColor(elegida ? kAmarillo : tema::kPanelBorde);
+
+        etiquetas_[i].setFillColor(elegida ? tema::kTexto : tema::kTextoSuave);
+        valores_[i].setFillColor(elegida ? kAmarillo : tema::kTextoSuave);
+    }
+
+    // El senalador acompana a la fila activa, con el mismo vaiven que el menu.
+    const sf::FloatRect placa = placas_[seleccion_].getGlobalBounds();
+    const float empuje = std::sin(reloj_ * 5.f) * 4.f;
+    senalador_.setPosition({ placa.position.x - 30.f + empuje,
+                             placa.position.y + placa.size.y / 2.f - 8.f });
 }
 
 void PantallaOpciones::dibujar(sf::RenderTarget& objetivo) const
 {
+    if (fondo_) objetivo.draw(*fondo_);
     objetivo.draw(velo_);
-    objetivo.draw(titulo_);
-    for (const sf::Text& fila : filas_)
-        objetivo.draw(fila);
+
+    marquesina_.dibujar(objetivo);
+    tema::dibujarConSombra(objetivo, titulo_, 3.f);
+
+    for (std::size_t i = 0; i < placas_.size(); ++i)
+    {
+        objetivo.draw(placas_[i]);
+        objetivo.draw(etiquetas_[i]);
+
+        // La fila del volumen lleva barra ademas del numero.
+        if (static_cast<Fila>(i) == Fila::Volumen)
+        {
+            objetivo.draw(fondoVolumen_);
+            objetivo.draw(barraVolumen_);
+        }
+
+        objetivo.draw(valores_[i]);
+    }
+
+    objetivo.draw(senalador_);
+
+    tiraPie_.dibujar(objetivo);
     objetivo.draw(pie_);
+
+    objetivo.draw(barrido_);
 }
 
 } // namespace vp

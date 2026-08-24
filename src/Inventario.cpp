@@ -30,7 +30,7 @@ void Inventario::limpiarAgotados()
         std::remove_if(objetos_.begin(), objetos_.end(),
                        [](const std::unique_ptr<Objeto>& o)
                        {
-                           return !o->esInfinito() && o->agotado();
+                           return o->agotado();
                        }),
         objetos_.end());
 }
@@ -66,9 +66,14 @@ Inventario Inventario::inicial()
 {
     Inventario inv;
 
-    inv.agregar(std::make_unique<Alimento>("croquetas", 5, 25.f, 5));
-    inv.agregar(std::make_unique<Alimento>("pescado",  10, 40.f, 2));
-    inv.agregar(std::make_unique<Alimento>("un hueso",  8, 35.f, 2));
+    // Cuatro comidas con cantidades distintas: la mas floja es infinita para
+    // que nunca se pueda dejar a la mascota sin nada, y las buenas se acaban.
+    // La cantidad manda tambien en cuanto dura la animacion de comer, asi que
+    // un banquete se ve mas largo que un puñado de pienso.
+    inv.agregar(std::make_unique<Alimento>("pienso",       3, 15.f, -1));
+    inv.agregar(std::make_unique<Alimento>("una zanahoria", 6, 30.f,  6));
+    inv.agregar(std::make_unique<Alimento>("corteza",       6, 30.f,  6));
+    inv.agregar(std::make_unique<Alimento>("un banquete",  18, 60.f,  2));
 
     inv.agregar(std::make_unique<Juguete>("pelota", 15, 20.f));
     inv.agregar(std::make_unique<Juguete>("laser",  25, 30.f));

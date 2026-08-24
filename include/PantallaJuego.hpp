@@ -4,6 +4,7 @@
 #include "Hud.hpp"
 #include "Tema.hpp"
 #include "PanelAdmin.hpp"
+#include "PanelComida.hpp"
 #include "Pantalla.hpp"
 #include "VistaMascota.hpp"
 #include "AdminMenu.hpp"
@@ -12,6 +13,7 @@
 
 #include <SFML/Graphics.hpp>
 
+#include <cstddef>
 #include <memory>
 #include <optional>
 #include <string>
@@ -45,7 +47,15 @@ private:
     void crearBotones();
     void construirEscenario();
     void construirBarrido();
+    void construirMetrica();
+    void actualizarMetrica();
     void anunciar(const std::string& texto, sf::Color color);
+
+    /// Abre la cartelera de comida con lo que quede en el inventario.
+    void abrirDespensa();
+
+    /// Usa el primer objeto disponible de una categoria ("Juguete", "Aseo"...).
+    void usarPrimero(const std::string& categoria);
 
     const sf::Font&              fuente_;
     std::unique_ptr<Mascota>     mascota_;
@@ -57,6 +67,16 @@ private:
 
     AdminMenu                    admin_;
     PanelAdmin                   panelAdmin_;
+    PanelComida                  panelComida_;
+
+    // --- Metrica de actividad, que enciende el Admin_Menu -------------------
+    tema::PanelBiselado          panelMetrica_;
+    sf::Text                     tituloMetrica_;
+    sf::Text                     textoMetrica_;
+    sf::ConvexShape              fondoProgreso_;
+    sf::ConvexShape              barraProgreso_;
+    sf::Vector2f                 origenProgreso_ { 0.f, 0.f };
+    float                        anchoProgreso_  = 0.f;
 
     /// Fondo del escenario: la mascota repetida en mosaico, compuesta una vez.
     sf::RenderTexture            lienzoEscenario_;
