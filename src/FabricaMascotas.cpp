@@ -1,9 +1,7 @@
 #include "FabricaMascotas.hpp"
 
-#include "Dragon.hpp"
-#include "Gastly.hpp"
-#include "Gato.hpp"
-#include "Perro.hpp"
+#include "Castor.hpp"
+#include "Conejo.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -20,43 +18,39 @@ std::string enMinusculas(std::string texto)
 
 } // namespace sin nombre
 
-std::unique_ptr<Mascota> FabricaMascotas::crear(TipoMascota tipo, const std::string& nombre)
+std::unique_ptr<Mascota> FabricaMascotas::crear(TipoMascota tipo, Genero genero,
+                                                const std::string& nombre)
 {
     switch (tipo)
     {
-        case TipoMascota::Gastly: return std::make_unique<Gastly>(nombre);
-        case TipoMascota::Perro:  return std::make_unique<Perro>(nombre);
-        case TipoMascota::Gato:   return std::make_unique<Gato>(nombre);
-        case TipoMascota::Dragon: return std::make_unique<Dragon>(nombre);
+        case TipoMascota::Conejo: return std::make_unique<Conejo>(nombre, genero);
+        case TipoMascota::Castor: return std::make_unique<Castor>(nombre, genero);
     }
     return nullptr;
 }
 
-std::unique_ptr<Mascota> FabricaMascotas::crear(const std::string& especie, const std::string& nombre)
+std::unique_ptr<Mascota> FabricaMascotas::crear(const std::string& especie, Genero genero,
+                                                const std::string& nombre)
 {
     const std::string clave = enMinusculas(especie);
 
-    if (clave == "gastly") return crear(TipoMascota::Gastly, nombre);
-    if (clave == "perro")  return crear(TipoMascota::Perro,  nombre);
-    if (clave == "gato")   return crear(TipoMascota::Gato,   nombre);
-    if (clave == "dragon") return crear(TipoMascota::Dragon, nombre);
+    if (clave == "conejo") return crear(TipoMascota::Conejo, genero, nombre);
+    if (clave == "castor") return crear(TipoMascota::Castor, genero, nombre);
 
     return nullptr;
 }
 
 std::vector<TipoMascota> FabricaMascotas::tiposDisponibles()
 {
-    return { TipoMascota::Gastly, TipoMascota::Perro, TipoMascota::Gato, TipoMascota::Dragon };
+    return { TipoMascota::Conejo, TipoMascota::Castor };
 }
 
 std::string FabricaMascotas::nombreTipo(TipoMascota tipo)
 {
     switch (tipo)
     {
-        case TipoMascota::Gastly: return "Gastly";
-        case TipoMascota::Perro:  return "Perro";
-        case TipoMascota::Gato:   return "Gato";
-        case TipoMascota::Dragon: return "Dragon";
+        case TipoMascota::Conejo: return "Conejo";
+        case TipoMascota::Castor: return "Castor";
     }
     return "Desconocido";
 }

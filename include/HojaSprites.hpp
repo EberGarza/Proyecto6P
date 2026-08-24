@@ -29,6 +29,11 @@ namespace vp {
  *     puede declarar un tinte por estado para reutilizar otra animacion
  *     cambiandole el color (verdoso para Enferma, gris para Muerta).
  *
+ * Ademas de los ocho estados, una hoja puede traer animaciones de **accion**:
+ * secuencias que no describen como esta la mascota sino algo que hace un
+ * momento y termina, como banarse. Se declaran igual, con un nombre que no es
+ * ningun estado, y se piden por ese nombre con accion().
+ *
  * Al estar todo en un archivo de texto, se pueden ajustar las coordenadas sin
  * recompilar: basta reiniciar el juego.
  */
@@ -59,9 +64,11 @@ public:
     /// Color por el que se multiplica el sprite en ese estado.
     sf::Color tinte(TipoEstado tipo) const;
 
-    /// Animaciones del archivo cuyo nombre no es un estado del juego.
-    /// Hoy se ignoran; sirven para avisar de que hay arte sin conectar.
-    const std::vector<std::string>& ignoradas() const { return ignoradas_; }
+    /// Animacion de accion con ese nombre, o nullptr si la hoja no la trae.
+    const Animacion* accion(const std::string& nombre) const;
+
+    /// Nombres de las animaciones de accion que define la hoja.
+    std::vector<std::string> accionesDisponibles() const;
 
     const sf::Texture& textura() const { return textura_; }
     float escala() const               { return escala_; }
@@ -74,14 +81,14 @@ private:
     /// Carpeta que contiene el archivo de configuracion.
     static std::string carpetaDe(const std::string& ruta);
 
-    sf::Texture                     textura_;
-    std::map<TipoEstado, Animacion> animaciones_;
-    std::map<TipoEstado, sf::Color> tintes_;
-    std::string                     nombre_;
-    std::string                     error_;
-    std::vector<std::string>        ignoradas_;
-    float                           escala_ = 1.f;
-    bool                            valida_ = false;
+    sf::Texture                        textura_;
+    std::map<TipoEstado, Animacion>    animaciones_;
+    std::map<std::string, Animacion>   acciones_;
+    std::map<TipoEstado, sf::Color>    tintes_;
+    std::string                        nombre_;
+    std::string                        error_;
+    float                              escala_ = 1.f;
+    bool                               valida_ = false;
 };
 
 } // namespace vp

@@ -37,6 +37,9 @@ public:
     void establecerActivo(bool activo);        ///< marca el boton como "encendido"
     void establecerTamanoTexto(unsigned tamano);
 
+    /// Etiqueta del atajo de teclado que se dibuja en la esquina del boton.
+    void establecerTecla(const std::string& etiquetaTecla);
+
     bool habilitado() const { return habilitado_; }
     bool activo() const     { return activo_; }
     bool contiene(sf::Vector2f punto) const;
@@ -50,7 +53,11 @@ private:
     void centrarTexto();
 
     sf::RectangleShape forma_;
+    sf::RectangleShape filoSuperior_;
+    sf::RectangleShape filoIzquierdo_;
+    sf::RectangleShape marcaTecla_;
     sf::Text           texto_;
+    sf::Text           tecla_;
     Accion             accion_;
 
     sf::Color colorBase_      = tema::kBoton;

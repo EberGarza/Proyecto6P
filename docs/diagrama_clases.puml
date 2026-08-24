@@ -26,6 +26,7 @@ package "nucleo (logica pura, sin SFML)" {
 
   abstract class Mascota {
     - nombre_ : string
+    - genero_ : Genero
     - edadSegundos_ : float
     - viva_ : bool
     - bitacora_ : deque<string>
@@ -39,6 +40,8 @@ package "nucleo (logica pura, sin SFML)" {
     + acariciar() : bool
     + cambiarEstado(nuevo : TipoEstado)
     + registrar(mensaje : string)
+    + genero() : Genero
+    + claveArte() : string
     + {abstract} especie() : string
     + {abstract} sonido() : string
     + {abstract} comidaFavorita() : string
@@ -47,24 +50,22 @@ package "nucleo (logica pura, sin SFML)" {
     - aplicarEfectosSecundarios(dt : float)
   }
 
-  class Perro
-  class Gastly {
-    + asustar() : bool
+  class Conejo {
+    + saltar() : bool
   }
-  class Gato {
-    + acicalarse()
-  }
-  class Dragon {
-    + escupirFuego() : bool
+  class Castor {
+    + roer() : bool
   }
 
   class FabricaMascotas <<factory>> {
-    + {static} crear(tipo : TipoMascota, nombre) : Mascota
-    + {static} crear(especie : string, nombre) : Mascota
+    + {static} crear(tipo : TipoMascota, genero, nombre) : Mascota
+    + {static} crear(especie : string, genero, nombre) : Mascota
     + {static} tiposDisponibles() : vector<TipoMascota>
+    + {static} nombreTipo(tipo : TipoMascota) : string
   }
 
-  enum TipoMascota { Gastly, Perro, Gato, Dragon }
+  enum TipoMascota { Conejo, Castor }
+  enum Genero { Macho, Hembra }
   enum TipoEstado {
     Normal
     Feliz
@@ -193,6 +194,55 @@ package "grafico (capa SFML)" {
     - escribir(c : Uint32)
   }
 
+  class PantallaMenu {
+    - lienzoFondo_ : sf::RenderTexture
+    - fondo_ : optional<sf::Sprite>
+    - titulo_, pie_ : sf::Text
+    - textosMenu_ : vector<sf::Text>
+    - musica_ : Music
+    - botonMusica_ : MusicButton
+    - seleccion_ : size_t
+    - construirFondo()
+    - colocarOpciones()
+    - elegir(indice : size_t)
+    - mover(direccion : int)
+  }
+
+  class PantallaOpciones {
+    - filas_ : vector<sf::Text>
+    - musica_ : Music
+    - seleccion_ : size_t
+    - musicaActiva_ : bool
+    - volumen_ : int
+    - borrada_ : bool
+    - ajustar(direccion : int)
+    - activar()
+    - refrescarTextos()
+  }
+
+  class Music {
+    - musica_ : sf::Music
+    - cargada_ : bool
+    + load(archivo : string) : bool
+    + play()
+    + pause()
+    + stop()
+    + setLoop(repetir : bool)
+    + setVolume(volumen : float)
+    + isPlaying() : bool
+    + isLoaded() : bool
+  }
+
+  class MusicButton {
+    - textura_ : sf::Texture
+    - sprite_ : optional<sf::Sprite>
+    - activo_ : bool
+    + cargar(ruta : string, posicion : Vector2f, escala : float) : bool
+    + contiene(punto : Vector2f) : bool
+    + establecerActivo(activo : bool)
+    + activo() : bool
+  }
+
   class PantallaJuego {
     - mascota_ : unique_ptr<Mascota>
     - inventario_ : Inventario
@@ -226,9 +276,11 @@ package "grafico (capa SFML)" {
   class HojaSprites {
     - textura_ : sf::Texture
     - animaciones_ : map<TipoEstado, Animacion>
+    - acciones_ : map<string, Animacion>
     - tintes_ : map<TipoEstado, Color>
     + cargar(rutaConfig : string) : bool
     + animacion(t : TipoEstado) : Animacion*
+    + accion(nombre : string) : Animacion*
     + tinte(t : TipoEstado) : Color
     - {static} recortarFondo(img, fondo, tolerancia)
   }
@@ -241,7 +293,8 @@ package "grafico (capa SFML)" {
   class VistaMascota <<fachada>> {
     - render_ : unique_ptr<RenderMascota>
     - usandoSprites_ : bool
-    + prepararEspecie(texturas, especie) : bool
+    + prepararMascota(m : Mascota) : bool
+    + reproducirAccion(nombre : string)
     + forzarProcedural()
   }
 
@@ -286,11 +339,10 @@ package "grafico (capa SFML)" {
 }
 
 ' ------------------------- Relaciones del nucleo ---------------------------
-Mascota <|-- Gastly
-Mascota <|-- Perro
-Mascota <|-- Gato
-Mascota <|-- Dragon
+Mascota <|-- Conejo
+Mascota <|-- Castor
 
+Mascota ..> Genero : macho o hembra
 Mascota "1" *-- "5" Atributo : posee
 Mascota "1" *-- "1" MaquinaEstados : posee
 
@@ -318,6 +370,7 @@ Objeto ..> Mascota : aplica efecto
 
 FabricaMascotas ..> Mascota : crea
 FabricaMascotas ..> TipoMascota
+FabricaMascotas ..> Genero
 GestorGuardado ..> Mascota : guarda / carga
 GestorGuardado ..> FabricaMascotas : usa
 
@@ -326,6 +379,8 @@ AdminMenu ..> Inventario : manipula
 AdminMenu ..> TipoEstado
 
 ' ------------------------ Relaciones de la capa grafica --------------------
+Pantalla <|-- PantallaMenu
+Pantalla <|-- PantallaOpciones
 Pantalla <|-- PantallaSeleccion
 Pantalla <|-- PantallaJuego
 
@@ -334,6 +389,13 @@ RenderMascota <|-- RenderSprite
 
 Juego "1" o-- "1" Pantalla : pantalla activa
 Juego "1" *-- "1" GestorRecursos : fuentes
+
+PantallaMenu "1" *-- "1" Music
+PantallaMenu "1" *-- "1" MusicButton
+PantallaMenu "1" ..> HojaSprites : compone el fondo
+
+PantallaOpciones "1" *-- "1" Music
+PantallaOpciones ..> GestorGuardado : borrar partida
 
 PantallaSeleccion "1" *-- "1" VistaMascota
 PantallaSeleccion "1" o-- "1" Mascota : la crea y la entrega

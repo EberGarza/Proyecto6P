@@ -140,6 +140,7 @@ void PanelAdmin::actualizar(sf::Vector2f raton, const AdminMenu& admin,
     diagnostico_.setString(
         "Estado:      " + mascota.estado().nombre()                       + "\n" +
         "Especie:     " + mascota.especie()                               + "\n" +
+        "Genero:      " + nombreGenero(mascota.genero())                  + "\n" +
         "Viva:        " + std::string(mascota.estaViva() ? "si" : "no")   + "\n" +
         "Inmortal:    " + std::string(admin.inmortalidad() ? "si" : "no") + "\n" +
         "Velocidad:   x" + util::aTexto(admin.escalaTiempo())             + "\n" +

@@ -58,7 +58,7 @@ RenderProcedural::RenderProcedural(const sf::Font& fuente)
 
     efecto_.setFillColor(tema::kTexto);
 
-    configurarEspecie("Perro");
+    configurarEspecie("Conejo");
     aplicarEstado(TipoEstado::Normal);
     establecerEscala(1.f);
 }
@@ -70,32 +70,18 @@ void RenderProcedural::configurarEspecie(const std::string& especie)
     if (especie == especieActual_) return;
     especieActual_ = especie;
 
-    if (especie == "Gastly")
+    if (especie == "Castor")
     {
-        colorCuerpo_ = sf::Color(150, 110, 168);
-        colorPanza_  = sf::Color(196, 158, 208);
-        orejaIzq_.setPointCount(3);          // mechones de gas
-        orejaDer_.setPointCount(3);
+        colorCuerpo_ = sf::Color(122, 82, 52);
+        colorPanza_  = sf::Color(186, 138, 96);
+        orejaIzq_.setPointCount(24);         // orejas pequenas y redondas
+        orejaDer_.setPointCount(24);
     }
-    else if (especie == "Gato")
+    else                                      // Conejo y cualquier especie nueva
     {
-        colorCuerpo_ = sf::Color(148, 152, 168);
-        colorPanza_  = sf::Color(216, 220, 232);
-        orejaIzq_.setPointCount(3);          // orejas puntiagudas
-        orejaDer_.setPointCount(3);
-    }
-    else if (especie == "Dragon")
-    {
-        colorCuerpo_ = sf::Color(96, 168, 110);
-        colorPanza_  = sf::Color(196, 226, 168);
-        orejaIzq_.setPointCount(3);          // cuernos
-        orejaDer_.setPointCount(3);
-    }
-    else                                      // Perro y cualquier especie nueva
-    {
-        colorCuerpo_ = sf::Color(190, 150, 105);
-        colorPanza_  = sf::Color(232, 208, 176);
-        orejaIzq_.setPointCount(24);         // orejas redondas
+        colorCuerpo_ = sf::Color(168, 172, 186);
+        colorPanza_  = sf::Color(226, 230, 240);
+        orejaIzq_.setPointCount(24);         // orejas largas
         orejaDer_.setPointCount(24);
     }
 

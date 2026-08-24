@@ -1,17 +1,20 @@
 #include "PantallaJuego.hpp"
 
 #include "Tema.hpp"
-#include "Dragon.hpp"
-#include "Gastly.hpp"
-#include "Gato.hpp"
+#include "Castor.hpp"
+#include "Conejo.hpp"
 #include "GestorGuardado.hpp"
+#include "HojaSprites.hpp"
+#include "RenderSprite.hpp"
 
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
 #include <utility>
 
 namespace vp {
 namespace {
 
-constexpr float kAnchoHud       = 320.f;
 constexpr float kAltoBotonera   = 110.f;
 
 } // namespace sin nombre
@@ -23,71 +26,160 @@ PantallaJuego::PantallaJuego(const sf::Font& fuente,
     , mascota_(std::move(mascota))
     , inventario_(Inventario::inicial())
     , vista_(fuente)
-    , hud_(fuente,
-           { tema::kMargen, tema::kMargen },
-           { kAnchoHud, tamanoVentana.y - kAltoBotonera - tema::kMargen * 2.f })
+    , hud_(fuente, tamanoVentana, Hud::kAlturaTira)
     , panelAdmin_(fuente, tamanoVentana)
-    , pie_(fuente, "Teclas 1-6: acciones   |   ESC: salir", tema::kTextoChico)
+    , pie_(fuente, "TECLAS 1-6  ACCIONES     ESC  SALIR", 13)
+    , anuncio_(fuente, "", 64)
     , tamanoVentana_(tamanoVentana)
 {
-    const float xEscenario = tema::kMargen * 2.f + kAnchoHud;
-    const float anchoEscenario = tamanoVentana.x - xEscenario - tema::kMargen;
-    const float altoEscenario  = tamanoVentana.y - kAltoBotonera - tema::kMargen * 2.f;
+    construirEscenario();
+    construirBarrido();
 
-    escenario_.setPosition({ xEscenario, tema::kMargen });
-    escenario_.setSize({ anchoEscenario, altoEscenario });
-    escenario_.setFillColor(tema::kPanel);
-    escenario_.setOutlineThickness(1.f);
-    escenario_.setOutlineColor(tema::kPanelBorde);
+    // El escenario ocupa la franja entre el marcador y la botonera.
+    const float altoEscenario = tamanoVentana.y - Hud::kAlturaTira - kAltoBotonera;
+    centroEscenario_ = { tamanoVentana.x * 0.62f,
+                         Hud::kAlturaTira + altoEscenario * 0.46f };
 
-    vista_.prepararEspecie(mascota_->especie());
-    // Factor entero: ampliar pixel art por un numero fraccionario hace que unos
-    // pixeles ocupen 3 y otros 4, y eso produce hormigueo al animarse.
-    vista_.establecerEscala(4.f);
-    vista_.establecerPosicion({ xEscenario + anchoEscenario * 0.5f,
-                                tema::kMargen + altoEscenario * 0.55f });
+    vista_.prepararMascota(*mascota_);
+    vista_.establecerEscala(3.f);   // escala entera; a x4 no cabe en el escenario nuevo
+    vista_.establecerPosicion(centroEscenario_);
+
+    // --- Botonera, con su panel de fondo ---
+    panelBotonera_ = tema::panelBiselado(
+        { 0.f, tamanoVentana.y - kAltoBotonera },
+        { tamanoVentana.x, kAltoBotonera });
 
     pie_.setFillColor(tema::kTextoTenue);
-    pie_.setPosition({ tema::kMargen, tamanoVentana.y - 26.f });
+    pie_.setPosition({ 22.f, tamanoVentana.y - 24.f });
+
+    anuncio_.setFillColor(tema::kAcento);
 
     crearBotones();
     panelAdmin_.enlazar(admin_, *mascota_, inventario_, vista_);
+    estadoAnunciado_ = mascota_->tipoEstado();
+}
+
+void PantallaJuego::construirEscenario()
+{
+    const auto ancho = static_cast<unsigned>(tamanoVentana_.x);
+    const auto alto  = static_cast<unsigned>(tamanoVentana_.y);
+    if (!lienzoEscenario_.resize({ ancho, alto })) return;
+
+    lienzoEscenario_.clear(tema::kFondo);
+
+    // Un patron repetido con la propia mascota, como el del menu de inicio.
+    // Al usar su hoja, el fondo cambia con la especie y el genero elegidos.
+    HojaSprites hoja;
+    if (mascota_ && hoja.cargar(RenderSprite::rutaDe(mascota_->claveArte())))
+    {
+        if (const Animacion* idle = hoja.animacion(TipoEstado::Normal))
+        {
+            sf::Sprite sello(hoja.textura());
+            idle->aplicarCuadroActual(sello);
+            sello.setColor(sf::Color(255, 255, 255, 13));
+            sello.setScale({ 2.f, 2.f });
+
+            // El paso va con el tamano del sello (64 px por 2), con aire de
+            // sobra: si se acercan mas, el patron deja de leerse como fondo.
+            const float paso = 150.f;
+            int fila = 0;
+            for (float y = 20.f; y < tamanoVentana_.y + paso; y += paso, ++fila)
+            {
+                const float desfase = (fila % 2 == 0) ? 0.f : paso / 2.f;
+                for (float x = 20.f + desfase; x < tamanoVentana_.x + paso; x += paso)
+                {
+                    sello.setRotation(sf::degrees(((fila + static_cast<int>(x)) % 5) * 7.f - 14.f));
+                    sello.setPosition({ x, y });
+                    lienzoEscenario_.draw(sello);
+                }
+            }
+        }
+    }
+
+    // Antes habia aqui una linea de suelo dibujada a mano. Ya no hace falta:
+    // los sprites nuevos traen su propia sombra, y la linea quedaba a otra
+    // altura, como si la mascota flotara por encima del suelo.
+
+    lienzoEscenario_.display();
+    escenario_.emplace(lienzoEscenario_.getTexture());
+}
+
+void PantallaJuego::construirBarrido()
+{
+    // Lineas horizontales oscuras cada dos pixeles. Es el truco mas barato que
+    // hay para que una pantalla parezca un monitor de tubo.
+    barrido_.setPrimitiveType(sf::PrimitiveType::Lines);
+    barrido_.clear();
+
+    for (float y = 0.f; y < tamanoVentana_.y; y += 3.f)
+    {
+        const sf::Color tinta(0, 0, 0, 46);
+        barrido_.append(sf::Vertex{ { 0.f, y }, tinta });
+        barrido_.append(sf::Vertex{ { tamanoVentana_.x, y }, tinta });
+    }
+}
+
+void PantallaJuego::anunciar(const std::string& texto, sf::Color color)
+{
+    anuncio_.setString(texto);
+    anuncio_.setFillColor(color);
+
+    const sf::FloatRect limites = anuncio_.getLocalBounds();
+    anuncio_.setOrigin({ limites.position.x + limites.size.x / 2.f,
+                         limites.position.y + limites.size.y / 2.f });
+    anuncio_.setPosition({ tamanoVentana_.x / 2.f, Hud::kAlturaTira + 70.f });
+    anuncioRestante_ = 1.4f;
 }
 
 void PantallaJuego::crearBotones()
 {
-    // Con la accion exclusiva de especie llegan a ser siete botones, asi que
-    // el ancho esta ajustado para que la fila entre completa en la ventana.
-    const sf::Vector2f tamano(120.f, 42.f);
-    float x = tema::kMargen;
-    const float y = tamanoVentana_.y - kAltoBotonera + 10.f;
+    // Botonera de siete teclas repartidas a lo ancho, como el panel de control
+    // de una recreativa.
+    const float margen = 18.f;
+    const float hueco  = 8.f;
+    const int   total  = 7;          // seis acciones comunes y la de la especie
+    const float anchoBoton = (tamanoVentana_.x - margen * 2.f - hueco * (total - 1)) / total;
+
+    const sf::Vector2f tamano(anchoBoton, 52.f);
+    float x = margen;
+    const float y = tamanoVentana_.y - kAltoBotonera + 16.f;
 
     Mascota* m = mascota_.get();
+    int indiceTecla = 1;
 
-    const auto agregar = [&](const std::string& etiqueta, Boton::Accion accion)
+    const auto agregar = [&](const std::string& etiqueta, Boton::Accion accion, bool conTecla)
     {
         botones_.emplace_back(fuente_, etiqueta, sf::Vector2f(x, y), tamano,
                               std::move(accion));
-        x += tamano.x + 10.f;
+        if (conTecla) botones_.back().establecerTecla(std::to_string(indiceTecla++));
+        x += tamano.x + hueco;
     };
 
-    agregar("Alimentar", [m] { m->alimentar(25.f); });
-    agregar("Jugar",     [m] { m->jugar(20.f); });
-    agregar("Asear",     [m] { m->asear(40.f); });
-    agregar("Medicar",   [m] { m->medicar(35.f); });
-    agregar("Dormir",    [m] { if (m->tipoEstado() == TipoEstado::Durmiendo) m->despertar();
-                               else                                          m->dormir(); });
-    agregar("Acariciar", [m] { m->acariciar(); });
+    VistaMascota* vista = &vista_;
+
+    agregar("ALIMENTAR", [m] { m->alimentar(25.f); }, true);
+    agregar("JUGAR",     [m] { m->jugar(20.f); },     true);
+
+    // Asear es la unica accion con animacion propia en la hoja: al pulsarla la
+    // mascota se bana un momento y despues vuelve a su estado. Si la hoja no
+    // trae esa animacion, reproducirAccion no hace nada y la accion funciona
+    // igual, solo que sin dibujo especial.
+    agregar("ASEAR",     [m, vista] { if (m->asear(40.f)) vista->reproducirAccion("Aseo"); },
+            true);
+
+    agregar("MEDICAR",   [m] { m->medicar(35.f); },   true);
+    agregar("DORMIR",    [m] { if (m->tipoEstado() == TipoEstado::Durmiendo) m->despertar();
+                               else                                          m->dormir(); }, true);
+    agregar("ACARICIAR", [m] { m->acariciar(); },     true);
 
     // Accion exclusiva de cada especie: se resuelve con dynamic_cast, que es
     // la forma segura de preguntar por el tipo concreto detras del puntero base.
-    if (auto* gastly = dynamic_cast<Gastly*>(m))
-        agregar("Asustar", [gastly] { gastly->asustar(); });
-    else if (auto* dragon = dynamic_cast<Dragon*>(m))
-        agregar("Escupir fuego", [dragon] { dragon->escupirFuego(); });
-    else if (auto* gato = dynamic_cast<Gato*>(m))
-        agregar("Acicalarse", [gato] { gato->acicalarse(); });
+    if (auto* conejo = dynamic_cast<Conejo*>(m))
+        agregar("SALTAR", [conejo] { conejo->saltar(); }, false);
+    else if (auto* castor = dynamic_cast<Castor*>(m))
+        agregar("ROER", [castor] { castor->roer(); }, false);
 }
+
 
 // ---------------------------------------------------------------- Eventos ---
 
@@ -148,7 +240,9 @@ void PantallaJuego::manejarEvento(const sf::Event& evento)
 
             case sf::Keyboard::Key::Num1: mascota_->alimentar(25.f); break;
             case sf::Keyboard::Key::Num2: mascota_->jugar(20.f);     break;
-            case sf::Keyboard::Key::Num3: mascota_->asear(40.f);     break;
+            case sf::Keyboard::Key::Num3:
+                if (mascota_->asear(40.f)) vista_.reproducirAccion("Aseo");
+                break;
             case sf::Keyboard::Key::Num4: mascota_->medicar(35.f);   break;
 
             case sf::Keyboard::Key::Num5:
@@ -185,7 +279,33 @@ void PantallaJuego::actualizar(float dt)
     }
 
     vista_.actualizar(*mascota_, dt);   // la animacion va en tiempo real
-    hud_.actualizar(*mascota_);
+    hud_.actualizar(*mascota_, dt);
+
+    // Cuando la mascota cambia de estado se lanza un cartel en mitad del
+    // escenario, como los avisos de asalto de una recreativa. K.O. al morir.
+    if (mascota_->tipoEstado() != estadoAnunciado_)
+    {
+        estadoAnunciado_ = mascota_->tipoEstado();
+        if (estadoAnunciado_ == TipoEstado::Muerta)
+            anunciar("K.O.", tema::kMal);
+        else
+            anunciar(mascota_->estado().nombre(), tema::kAcento);
+    }
+
+    if (anuncioRestante_ > 0.f)
+    {
+        anuncioRestante_ -= dt;
+
+        // Entra de golpe y se desvanece al final.
+        const float t = anuncioRestante_ / 1.4f;
+        const auto alfa = static_cast<std::uint8_t>(255.f * std::min(1.f, t * 3.f));
+        sf::Color color = anuncio_.getFillColor();
+        color.a = alfa;
+        anuncio_.setFillColor(color);
+
+        const float escala = 1.f + (1.f - std::min(1.f, (1.4f - anuncioRestante_) * 6.f)) * 0.4f;
+        anuncio_.setScale({ escala, escala });
+    }
 
     if (admin_.visible())
         panelAdmin_.actualizar(raton_, admin_, *mascota_, vista_, fps_);
@@ -195,14 +315,23 @@ void PantallaJuego::actualizar(float dt)
 
 void PantallaJuego::dibujar(sf::RenderTarget& objetivo) const
 {
-    objetivo.draw(escenario_);
+    if (escenario_) objetivo.draw(*escenario_);
     objetivo.draw(vista_);
+
+    if (anuncioRestante_ > 0.f)
+        objetivo.draw(anuncio_);
+
     objetivo.draw(hud_);
 
+    panelBotonera_.dibujar(objetivo);
     for (const Boton& boton : botones_)
         objetivo.draw(boton);
 
     objetivo.draw(pie_);
+
+    // El barrido va encima de todo el juego, pero por debajo del panel de
+    // desarrollo: ahi estorbaria para leer los numeros.
+    objetivo.draw(barrido_);
 
     if (admin_.visible())
         objetivo.draw(panelAdmin_);

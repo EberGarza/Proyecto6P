@@ -19,12 +19,14 @@ toda la estructura de clases.
 - **Ocho estados con transiciones por prioridad**: cada estado es una clase
   propia y decide él mismo a dónde puede pasar, sin un `if` gigante que crezca
   con el proyecto.
-- **Cuatro especies**: Gastly, Perro, Gato y Dragón, cada una con sus propias
-  tasas de desgaste, su sonido y una acción exclusiva.
+- **Dos especies y dos géneros**: conejo o castor, macho o hembra. Cada especie
+  tiene sus propias tasas de desgaste, su sonido y una acción exclusiva; cada
+  combinación de especie y género, su propia hoja de sprites.
+- **Nombre libre**: el campo empieza vacío y no se puede empezar sin escribir uno.
 - **Efectos cruzados entre necesidades**: la salud no baja sola, baja cuando
   descuidas la comida, la higiene o el ánimo. Y sube si cuidas bien.
 - **Animación por hoja de sprites** descrita en un archivo de texto que se
-  puede ajustar sin recompilar.
+  puede ajustar sin recompilar, con animaciones de estado y de acción (el baño).
 - **Dibujo de respaldo**: las especies sin arte se dibujan con figuras
   geométricas, así que el juego siempre se ve.
 - **Guardado automático** al salir, en un archivo de texto legible.
@@ -78,9 +80,31 @@ mingw32-make run
   - Clic izquierdo: pulsar los botones de acción
 - **Teclado**:
   - `1` a `6`: alimentar, jugar, asear, medicar, dormir, acariciar
+  - Flechas: elegir especie y género en la pantalla de selección
   - `Enter`: confirmar en la pantalla de selección
   - `Escape`: cerrar el panel de desarrollo, o salir del juego guardando
   - `F1`: abrir y cerrar el Admin_Menu, una vez desbloqueado
+
+### La interfaz del juego
+
+La pantalla de partida está montada como el marcador de un juego de pelea de
+recreativa, para que combine con el menú de inicio:
+
+- **Chapa con el nombre** arriba a la izquierda, y el estado actual a la
+  derecha, como el marcador de asalto.
+- **Barra de SALUD** ancha cruzando la pantalla, y cuatro medidores menores
+  debajo. La forma es un paralelogramo inclinado, con muescas que segmentan el
+  nivel para leerlo sin mirar el número.
+- **Rastro rojo.** Cuando un valor cae de golpe, un bloque rojo se queda atrás y
+  baja después. Es el recurso que usan esos juegos para que un golpe se *vea*, y
+  aquí sirve igual: si la mascota pierde salud de repente, se nota.
+- **Cartel de estado.** Cada vez que la mascota cambia de estado aparece su
+  nombre en grande en mitad del escenario, y **K.O.** cuando muere.
+- **Botonera** con el número de atajo en cada botón, como un panel de control.
+- **Líneas de barrido** sobre todo el juego, que imitan un monitor de tubo.
+
+El fondo repite en mosaico a la propia mascota, compuesto en caliente desde su
+hoja de sprites, igual que el menú de inicio.
 
 ## Estructura del Proyecto
 
@@ -89,7 +113,9 @@ Proyecto6P/
 │
 ├── assets/              # Recursos del juego
 │   ├── fonts/           # Fuentes tipográficas
-│   ├── images/          # Hoja de sprites y su archivo de recortes
+│   ├── images/          # Una hoja de sprites por especie y género,
+│   │                    #   con su archivo de recortes
+│   │   ├── beta/        # Arte de versiones anteriores, sin usar
 │   │   └── screenshots/ # Capturas para la documentación
 │   └── sound/           # Música y efectos sonoros
 │
@@ -99,14 +125,12 @@ Proyecto6P/
 │   ├── Manual_Usuario.md      # Manual del usuario
 │   ├── Manual_Programador.md  # Manual del programador
 │   ├── diagrama_clases.puml   # Diagrama UML de la arquitectura
-│   ├── diagrama_estados.puml  # Diagrama de estados de la mascota
-│   └── hoja_animaciones.png   # Revisión visual de la hoja de sprites
+│   └── diagrama_estados.puml  # Diagrama de estados de la mascota
 │
 ├── include/             # Archivos de cabecera (.hpp)
 │
 ├── src/                 # Código fuente (.cpp)
 │
-├── LICENSE
 └── Makefile             # Script de compilación
 ```
 
@@ -120,7 +144,7 @@ dependencia va siempre en un sentido.
 | Capa | Clases | Depende de |
 |------|--------|------------|
 | Lógica | `Mascota` y las especies, `Atributo`, `Estado`, `MaquinaEstados`, `TipoEstado`, `Objeto` y derivadas, `Inventario`, `FabricaMascotas`, `GestorGuardado`, `AdminMenu`, `Utilidades` | nada externo |
-| Gráfica | `Juego`, `Pantalla` y derivadas, `RenderMascota` y derivadas, `VistaMascota`, `HojaSprites`, `Animacion`, `Hud`, `Boton`, `BarraAtributo`, `PanelAdmin`, `Tema`, `GestorRecursos` | de la lógica y de SFML |
+| Gráfica | `Juego`, `Pantalla` y derivadas, `RenderMascota` y derivadas, `VistaMascota`, `HojaSprites`, `Animacion`, `Hud`, `Boton`, `BarraAtributo`, `PanelAdmin`, `Tema`, `GestorRecursos`, `Music`, `MusicButton` | de la lógica y de SFML |
 
 Si una clase de la primera columna necesitara incluir SFML, sería señal de que
 está en la capa equivocada.
@@ -129,7 +153,7 @@ está en la capa equivocada.
 
 - [Manual del Usuario](./docs/Manual_Usuario.md) - Cómo jugar y cuidar a la mascota
 - [Manual del Programador](./docs/Manual_Programador.md) - Arquitectura y decisiones de diseño
-- [Diagrama de Clases](./docs/diagrama_clases.puml) - Las 43 clases y sus relaciones
+- [Diagrama de Clases](./docs/diagrama_clases.puml) - Las clases y sus relaciones
 - [Diagrama de Estados](./docs/diagrama_estados.puml) - Los ocho estados y sus transiciones
 
 ## Desarrollo
@@ -156,14 +180,15 @@ mingw32-make clean
 ### Tecnologías utilizadas
 
 - **Lenguaje**: C++17
-- **Gráficos**: SFML 3.0
+- **Gráficos y audio**: SFML 3.0
 - **Compilador**: MinGW-w64 GCC (entorno UCRT64)
 - **Construcción**: Make
 - **Documentación**: Markdown, PlantUML
 
 ## Capturas de pantalla
 
-![Selección de mascota](./assets/images/screenshots/menu.png)
+![Menu principal](./assets/images/screenshots/menu.png)
+![Opciones](./assets/images/screenshots/opciones.png)
 ![Jugando](./assets/images/screenshots/jugando.png)
 ![Admin_Menu](./assets/images/screenshots/admin_menu.png)
 
@@ -174,10 +199,6 @@ mingw32-make clean
 ## Licencia
 
 © 2026 [Inei-Zone] - Todos los derechos reservados
-
-El sprite de Gastly es fan art de un personaje propiedad de Nintendo, Game
-Freak y The Pokémon Company, usado aquí sólo con fines educativos. Ver
-[LICENSE](./LICENSE).
 
 ## Agradecimientos
 

@@ -69,6 +69,7 @@ bool GestorGuardado::guardar(const Mascota& mascota, const std::string& ruta)
     archivo << "# Partida de VirtualPet\n";
     archivo << "version="   << kVersionFormato               << '\n';
     archivo << "especie="   << mascota.especie()             << '\n';
+    archivo << "genero="    << nombreGenero(mascota.genero()) << '\n';
     archivo << "nombre="    << mascota.nombre()              << '\n';
     archivo << "edad="      << mascota.edad()                << '\n';
     archivo << "saciedad="  << mascota.saciedad().valor()    << '\n';
@@ -92,7 +93,13 @@ std::unique_ptr<Mascota> GestorGuardado::cargar(const std::string& ruta)
     const std::string nombre  = aTextoCampo(campos, "nombre",  "Sin nombre");
     if (especie.empty()) return nullptr;
 
-    auto mascota = FabricaMascotas::crear(especie, nombre);
+    // Las partidas anteriores al genero no traen el campo. Se asume macho en
+    // vez de rechazar el archivo: perder una partida por un campo que no
+    // existia cuando se guardo seria peor que empezar con el sprite ajeno.
+    Genero genero = Genero::Macho;
+    generoDesdeNombre(aTextoCampo(campos, "genero", "Macho"), genero);
+
+    auto mascota = FabricaMascotas::crear(especie, genero, nombre);
     if (!mascota) return nullptr;
 
     mascota->establecerEdad(aReal(campos, "edad", 0.f));

@@ -38,8 +38,8 @@ void HojaSprites::recortarFondo(sf::Image& imagen, sf::Color fondo, int toleranc
 bool HojaSprites::cargar(const std::string& rutaConfig)
 {
     animaciones_.clear();
+    acciones_.clear();
     tintes_.clear();
-    ignoradas_.clear();
     valida_ = false;
     error_.clear();
 
@@ -54,9 +54,12 @@ bool HojaSprites::cargar(const std::string& rutaConfig)
     sf::Color   fondo(255, 255, 255);
     int         tolerancia = 0;
 
-    // Animacion que se esta construyendo en este momento.
+    // Animacion que se esta construyendo en este momento. Puede ser la de un
+    // estado o la de una accion; se distinguen por accionActual, que esta
+    // vacio cuando el nombre leido si era un estado.
     bool                enConstruccion = false;
     TipoEstado          estadoActual   = TipoEstado::Normal;
+    std::string         accionActual;
     std::vector<Cuadro> cuadros;
     float               duracion = 0.15f;
     bool                enBucle  = true;
@@ -64,9 +67,14 @@ bool HojaSprites::cargar(const std::string& rutaConfig)
     const auto cerrarAnimacion = [&]()
     {
         if (enConstruccion && !cuadros.empty())
-            animaciones_.emplace(estadoActual,
-                                 Animacion(textura_, cuadros, duracion, enBucle));
+        {
+            Animacion animacion(textura_, cuadros, duracion, enBucle);
+
+            if (accionActual.empty()) animaciones_.emplace(estadoActual, std::move(animacion));
+            else                      acciones_.emplace(accionActual, std::move(animacion));
+        }
         cuadros.clear();
+        accionActual.clear();
         enConstruccion = false;
     };
 
@@ -125,19 +133,14 @@ bool HojaSprites::cargar(const std::string& rutaConfig)
             if (!(campos >> bucle)) bucle = 1;
             enBucle = (bucle != 0);
 
-            // Un nombre que no corresponde a ningun estado no es un error: la
-            // hoja puede traer animaciones de acciones (banarse, comer) que
-            // todavia no estan conectadas. Se anotan y se ignoran sus cuadros,
-            // en vez de tumbar la carga entera por una linea de mas.
+            // Un nombre que no corresponde a ningun estado no es un error: es
+            // una animacion de accion (banarse, comer), algo que la mascota
+            // hace un momento y termina. Se guarda aparte, con su nombre, y
+            // quien la quiera la pide por el.
+            enConstruccion = true;
+
             if (!estadoDesdeNombre(nombreEstadoLeido, estadoActual))
-            {
-                ignoradas_.push_back(nombreEstadoLeido);
-                enConstruccion = false;
-            }
-            else
-            {
-                enConstruccion = true;
-            }
+                accionActual = nombreEstadoLeido;
         }
         else if (clave == "tinte")
         {
@@ -158,7 +161,7 @@ bool HojaSprites::cargar(const std::string& rutaConfig)
         }
         else if (clave == "cuadro")
         {
-            if (!enConstruccion) continue;   // pertenece a una animacion ignorada
+            if (!enConstruccion) continue;   // cuadro suelto, sin animacion abierta
 
             int x = 0, y = 0, w = 0, h = 0;
             if (!(campos >> x >> y >> w >> h)) continue;
@@ -212,6 +215,23 @@ const Animacion* HojaSprites::animacion(TipoEstado tipo) const
 {
     auto it = animaciones_.find(tipo);
     return (it == animaciones_.end()) ? nullptr : &it->second;
+}
+
+const Animacion* HojaSprites::accion(const std::string& nombre) const
+{
+    auto it = acciones_.find(nombre);
+    return (it == acciones_.end()) ? nullptr : &it->second;
+}
+
+std::vector<std::string> HojaSprites::accionesDisponibles() const
+{
+    std::vector<std::string> nombres;
+    nombres.reserve(acciones_.size());
+
+    for (const auto& [nombre, animacion] : acciones_)
+        nombres.push_back(nombre);
+
+    return nombres;
 }
 
 sf::Color HojaSprites::tinte(TipoEstado tipo) const

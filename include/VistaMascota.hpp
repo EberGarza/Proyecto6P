@@ -23,12 +23,17 @@ class VistaMascota : public sf::Drawable
 public:
     explicit VistaMascota(const sf::Font& fuente);
 
-    /// Prepara el dibujo para una especie. Devuelve true si uso sprites.
-    bool prepararEspecie(const std::string& especie);
+    /// Prepara el dibujo para una mascota concreta: cada especie tiene una
+    /// hoja por genero, asi que hace falta la mascota y no solo su especie.
+    /// Devuelve true si encontro sprites.
+    bool prepararMascota(const Mascota& mascota);
 
     void actualizar(const Mascota& mascota, float dt);
     void establecerPosicion(sf::Vector2f posicion);
     void establecerEscala(float escala);
+
+    /// Lanza una vez la animacion de una accion ("Aseo"), si la hoja la trae.
+    void reproducirAccion(const std::string& nombre);
 
     /// Cambia de estrategia a mano (lo usa el Admin_Menu).
     void forzarProcedural();

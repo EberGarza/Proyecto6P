@@ -14,11 +14,11 @@ VistaMascota::VistaMascota(const sf::Font& fuente)
 {
 }
 
-bool VistaMascota::prepararEspecie(const std::string& especie)
+bool VistaMascota::prepararMascota(const Mascota& mascota)
 {
     auto conSprites = std::make_unique<RenderSprite>();
 
-    if (conSprites->cargar(especie))
+    if (conSprites->cargar(mascota.claveArte()))
     {
         render_        = std::move(conSprites);
         usandoSprites_ = true;
@@ -51,6 +51,11 @@ void VistaMascota::establecerEscala(float escala)
 {
     escala_ = escala;
     if (render_) render_->establecerEscala(escala);
+}
+
+void VistaMascota::reproducirAccion(const std::string& nombre)
+{
+    if (render_) render_->reproducirAccion(nombre);
 }
 
 void VistaMascota::forzarProcedural()

@@ -3,12 +3,14 @@
 #include "Estado.hpp"
 #include "Utilidades.hpp"
 
+#include <cctype>
 #include <utility>
 
 namespace vp {
 
-Mascota::Mascota(std::string nombre)
+Mascota::Mascota(std::string nombre, Genero genero)
     : nombre_(std::move(nombre))
+    , genero_(genero)
     , saciedad_ ("Saciedad",  100.f)
     , felicidad_("Felicidad",  80.f)
     , energia_  ("Energia",   100.f)
@@ -75,7 +77,7 @@ bool Mascota::alimentar(float cantidad)
     }
     if (saciedad_.enMaximo())
     {
-        registrar(nombre_ + " ya esta llena, no quiere mas.");
+        registrar(nombre_ + " ya esta llen" + terminacion() + ", no quiere mas.");
         return false;
     }
 
@@ -97,7 +99,7 @@ bool Mascota::jugar(float intensidad)
     }
     if (energia_.porDebajoDe(15.f))
     {
-        registrar(nombre_ + " esta demasiado cansada para jugar.");
+        registrar(nombre_ + " esta demasiado cansad" + terminacion() + " para jugar.");
         return false;
     }
 
@@ -114,7 +116,7 @@ bool Mascota::asear(float cantidad)
     if (!viva_) return false;
     if (!estado().permiteInteraccion())
     {
-        registrar("Mejor no banarla mientras duerme.");
+        registrar("Mejor no banar" + pronombre() + " mientras duerme.");
         return false;
     }
     if (higiene_.enMaximo())
@@ -126,7 +128,7 @@ bool Mascota::asear(float cantidad)
     higiene_.modificar(cantidad);
     felicidad_.modificar(-cantidad * 0.10f);   // el bano no le encanta
 
-    registrar(nombre_ + " quedo limpia (+" + util::aTexto(cantidad) + " higiene).");
+    registrar(nombre_ + " quedo limpi" + terminacion() + " (+" + util::aTexto(cantidad) + " higiene).");
     return true;
 }
 
@@ -135,7 +137,7 @@ bool Mascota::medicar(float cantidad)
     if (!viva_) return false;
     if (salud_.enMaximo())
     {
-        registrar(nombre_ + " esta sana, no necesita medicina.");
+        registrar(nombre_ + " esta san" + terminacion() + ", no necesita medicina.");
         return false;
     }
 
@@ -151,7 +153,7 @@ bool Mascota::dormir()
     if (!viva_) return false;
     if (tipoEstado() == TipoEstado::Durmiendo)
     {
-        registrar(nombre_ + " ya esta dormida.");
+        registrar(nombre_ + " ya esta dormid" + terminacion() + ".");
         return false;
     }
 
@@ -164,7 +166,7 @@ bool Mascota::despertar()
     if (!viva_) return false;
     if (tipoEstado() != TipoEstado::Durmiendo)
     {
-        registrar(nombre_ + " ya esta despierta.");
+        registrar(nombre_ + " ya esta despiert" + terminacion() + ".");
         return false;
     }
 
@@ -215,7 +217,27 @@ bool Mascota::estaEnferma() const  { return salud_.porDebajoDe(30.f); }
 
 std::string Mascota::descripcion() const
 {
-    return nombre_ + ", " + especie() + ". Le encanta " + comidaFavorita() + ".";
+    return nombre_ + ", " + especie() + " " + nombreGenero(genero_)
+         + ". Le encanta " + comidaFavorita() + ".";
+}
+
+std::string Mascota::terminacion() const
+{
+    return (genero_ == Genero::Macho) ? "o" : "a";
+}
+
+std::string Mascota::pronombre() const
+{
+    return (genero_ == Genero::Macho) ? "lo" : "la";
+}
+
+std::string Mascota::claveArte() const
+{
+    std::string clave = especie();
+    for (char& c : clave)
+        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+
+    return clave + "_" + sufijoGenero(genero_);
 }
 
 // -------------------------------------------------------------- Estados -----

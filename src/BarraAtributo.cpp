@@ -6,71 +6,124 @@
 #include <utility>
 
 namespace vp {
+namespace {
+
+constexpr float kAnchoMuesca = 2.f;
+constexpr float kPasoMuesca  = 26.f;   ///< separacion entre muescas
+constexpr float kCaidaRastro = 0.55f;  ///< fraccion de barra por segundo
+
+} // namespace sin nombre
 
 BarraAtributo::BarraAtributo(const sf::Font& fuente, std::string etiqueta,
                              sf::Vector2f posicion, sf::Vector2f tamano)
     : etiqueta_(std::move(etiqueta))
+    , posicion_(posicion)
     , tamano_(tamano)
-    , texto_(fuente, etiqueta_, tema::kTextoChico)
-    , valor_(fuente, "", tema::kTextoChico)
+    , texto_(fuente, etiqueta_, 14)
+    , valor_(fuente, "", 14)
 {
-    fondo_.setSize(tamano);
-    fondo_.setPosition(posicion);
-    fondo_.setFillColor(tema::kFondo);
-    fondo_.setOutlineThickness(1.f);
-    fondo_.setOutlineColor(tema::kPanelBorde);
+    texto_.setFillColor(tema::kTextoSuave);
+    valor_.setFillColor(tema::kTexto);
 
-    relleno_.setSize(tamano);
-    relleno_.setPosition(posicion);
-    relleno_.setFillColor(tema::kBien);
+    marco_ = tema::paralelogramo(posicion_, tamano_);
+    marco_.setFillColor(tema::kPanelBorde);
+    marco_.setOutlineThickness(2.f);
+    marco_.setOutlineColor(tema::kPanelBorde);
 
-    texto_.setFillColor(tema::kTexto);
-    valor_.setFillColor(tema::kTextoSuave);
+    hueco_ = tema::paralelogramo({ posicion_.x + 2.f, posicion_.y + 2.f },
+                                 { tamano_.x - 4.f, tamano_.y - 4.f });
+    hueco_.setFillColor(tema::kBarraFondo);
+
+    // Las muescas se calculan una sola vez: no dependen del nivel.
+    for (float x = kPasoMuesca; x < tamano_.x - 4.f; x += kPasoMuesca)
+    {
+        sf::ConvexShape muesca = tema::paralelogramo(
+            { posicion_.x + 2.f + x, posicion_.y + 2.f },
+            { kAnchoMuesca, tamano_.y - 4.f });
+        muesca.setFillColor(tema::conAlfa(tema::kPanelBorde, 190));
+        muescas_.push_back(muesca);
+    }
 
     establecerPosicion(posicion);
 }
 
-void BarraAtributo::actualizar(const Atributo& atributo)
-{
-    const float porcentaje = atributo.porcentaje();
-
-    relleno_.setSize({ tamano_.x * porcentaje, tamano_.y });
-
-    if (colorAutomatico_)
-        relleno_.setFillColor(tema::segunNivel(porcentaje));
-
-    valor_.setString(util::aTexto(atributo.valor()));
-
-    // El numero va fuera de la barra, a su derecha. Dentro quedaria en blanco
-    // sobre verde cuando la barra esta llena y no se leeria.
-    const sf::FloatRect limites = valor_.getLocalBounds();
-    const sf::Vector2f  origen  = fondo_.getPosition();
-    valor_.setPosition({ origen.x + tamano_.x + 10.f,
-                         origen.y + tamano_.y * 0.5f - limites.size.y });
-}
-
 void BarraAtributo::establecerPosicion(sf::Vector2f posicion)
 {
-    fondo_.setPosition(posicion);
-    relleno_.setPosition(posicion);
+    posicion_ = posicion;
+    rehacerFormas();
 
-    const sf::FloatRect limites = texto_.getLocalBounds();
-    texto_.setPosition({ posicion.x + 8.f,
-                         posicion.y + tamano_.y * 0.5f - limites.size.y });
+    // La etiqueta va encima de la barra, en pequeno, como el nombre del
+    // luchador sobre su barra de vida.
+    texto_.setPosition({ posicion_.x + tema::kSesgo, posicion_.y - 18.f });
+
+    const sf::FloatRect limites = valor_.getLocalBounds();
+    valor_.setPosition({ posicion_.x + tamano_.x + tema::kSesgo - limites.size.x,
+                         posicion_.y - 18.f });
 }
 
-void BarraAtributo::establecerColorBase(sf::Color color)
+void BarraAtributo::rehacerFormas()
 {
-    colorAutomatico_ = false;
-    relleno_.setFillColor(color);
+    marco_ = tema::paralelogramo(posicion_, tamano_);
+    marco_.setFillColor(tema::kPanelBorde);
+
+    hueco_ = tema::paralelogramo({ posicion_.x + 2.f, posicion_.y + 2.f },
+                                 { tamano_.x - 4.f, tamano_.y - 4.f });
+    hueco_.setFillColor(tema::kBarraFondo);
+
+    muescas_.clear();
+    for (float x = kPasoMuesca; x < tamano_.x - 4.f; x += kPasoMuesca)
+    {
+        sf::ConvexShape muesca = tema::paralelogramo(
+            { posicion_.x + 2.f + x, posicion_.y + 2.f },
+            { kAnchoMuesca, tamano_.y - 4.f });
+        muesca.setFillColor(tema::conAlfa(tema::kPanelBorde, 190));
+        muescas_.push_back(muesca);
+    }
+}
+
+void BarraAtributo::actualizar(const Atributo& atributo, float dt)
+{
+    nivel_ = atributo.porcentaje();
+
+    // El rastro solo baja, y despacio. Si el valor sube, lo alcanza de golpe:
+    // subir no necesita dramatismo, bajar si.
+    if (rastro_ > nivel_) rastro_ = std::max(nivel_, rastro_ - kCaidaRastro * dt);
+    else                  rastro_ = nivel_;
+
+    const float util = tamano_.x - 4.f;
+
+    estela_ = tema::paralelogramo({ posicion_.x + 2.f, posicion_.y + 2.f },
+                                  { util * rastro_, tamano_.y - 4.f });
+    estela_.setFillColor(tema::kBarraEstela);
+
+    relleno_ = tema::paralelogramo({ posicion_.x + 2.f, posicion_.y + 2.f },
+                                   { util * nivel_, tamano_.y - 4.f });
+    relleno_.setFillColor(tema::segunNivel(nivel_));
+
+    // Una franja clara en la mitad superior simula el reflejo del cristal.
+    brillo_ = tema::paralelogramo({ posicion_.x + 2.f, posicion_.y + 2.f },
+                                  { util * nivel_, (tamano_.y - 4.f) * 0.4f });
+    brillo_.setFillColor(tema::kBarraBrillo);
+
+    valor_.setString(util::aTexto(atributo.valor()));
+    const sf::FloatRect limites = valor_.getLocalBounds();
+    valor_.setPosition({ posicion_.x + tamano_.x + tema::kSesgo - limites.size.x,
+                         posicion_.y - 18.f });
 }
 
 void BarraAtributo::draw(sf::RenderTarget& objetivo, sf::RenderStates estados) const
 {
-    objetivo.draw(fondo_,   estados);
+    objetivo.draw(marco_,   estados);
+    objetivo.draw(hueco_,   estados);
+    objetivo.draw(estela_,  estados);   // el rastro va detras del relleno
     objetivo.draw(relleno_, estados);
-    objetivo.draw(texto_,   estados);
-    objetivo.draw(valor_,   estados);
+    objetivo.draw(brillo_,  estados);
+
+    for (const sf::ConvexShape& muesca : muescas_)
+        objetivo.draw(muesca, estados);
+
+    tema::dibujarConSombra(objetivo, texto_);
+    tema::dibujarConSombra(objetivo, valor_);
 }
 
 } // namespace vp

@@ -2,22 +2,51 @@
 
 ## Qué es VirtualPet
 
-Una mascota virtual que vive en tu ordenador y depende de que la cuides. Tiene
-cinco necesidades que se van agotando solas con el tiempo, y su estado de ánimo
-y su salud dependen de lo bien que las atiendas. Si la descuidas lo suficiente,
-se enferma. Y si la enfermedad no se trata, muere.
+Una mascota virtual que vive en tu ordenador y depende de que la cuides.
+Puedes tener un conejo o un castor, macho o hembra, y ponerle el nombre que
+quieras. Tiene cinco necesidades que se van agotando solas con el tiempo, y su
+estado de ánimo y su salud dependen de lo bien que las atiendas. Si la
+descuidas lo suficiente, se enferma. Y si la enfermedad no se trata, muere.
 
 ## Cómo empezar
 
-Al abrir el juego aparece la pantalla de selección.
+Al abrir el juego aparece el menú principal, con música de fondo.
 
-![Selección de mascota](../assets/images/screenshots/menu.png)
+![Menú principal](../assets/images/screenshots/menu.png)
 
-1. **Elige la especie** pulsando uno de los cuatro botones. La vista previa se
-   actualiza al momento y debajo aparece una descripción de su carácter.
-2. **Escribe el nombre** directamente con el teclado. Se borra con retroceso y
-   admite hasta 14 caracteres.
-3. Pulsa **Comenzar** o la tecla `Enter`.
+Muévete por las opciones con las flechas `↑` y `↓`, y confirma con `Enter`:
+
+- **Jugar** lleva a la pantalla de selección.
+- **Opciones** abre los ajustes.
+- **Salir** cierra el juego.
+
+La tecla `M` silencia y reactiva la música en cualquier momento; el altavoz de
+la esquina indica si está sonando.
+
+### Opciones
+
+![Opciones](../assets/images/screenshots/opciones.png)
+
+- **Música**: enciende y apaga el sonido.
+- **Volumen**: se ajusta con `←` y `→`.
+- **Borrar partida**: elimina la mascota guardada. No se puede deshacer.
+- **Volver**: regresa al menú. También sirve `Escape`.
+
+### Elegir la mascota
+
+![Selección de mascota](../assets/images/screenshots/seleccion.png)
+
+1. **Elige la especie**: conejo o castor. Con el ratón, o con las flechas
+   `←` y `→`.
+2. **Elige si es macho o hembra**, con el ratón o con `↑` y `↓`. Cada
+   combinación tiene su propio dibujo, y la vista previa se actualiza al
+   momento.
+3. **Escribe el nombre** con el teclado. Empieza vacío a propósito, para que
+   pongas el que quieras. Se borra con retroceso y admite hasta 14 caracteres.
+4. Pulsa **Comenzar** o la tecla `Enter`.
+
+> El botón **Comenzar** está apagado mientras no escribas un nombre. Sin nombre
+> no se empieza.
 
 Si ya habías jugado antes, arriba a la derecha aparece **Continuar partida**,
 que recupera la mascota tal y como la dejaste.
@@ -37,7 +66,16 @@ Todas siguen la misma regla: **cuanto más llena, mejor**.
 La **salud es distinta a las demás**: no baja sola. Baja cuando la saciedad, la
 higiene o la felicidad llegan a niveles críticos, y vuelve a subir por su cuenta
 si la mascota está bien cuidada. Es decir, descuidar una cosa acaba pagándose en
-otra.
+otra. Por eso la salud tiene su propia barra, ancha y cruzando la pantalla,
+mientras las otras cuatro van más pequeñas debajo.
+
+Las barras están cortadas en muescas, como los medidores de vida de un juego de
+pelea: así se ve de un vistazo cuánto queda sin leer el número. Y cuando un
+valor **cae de golpe**, un bloque rojo se queda atrás y baja después, para que
+el golpe se note.
+
+El color avisa por sí solo: **verde** si va bien, **ámbar** cuando conviene
+atenderla y **rojo** cuando es urgente.
 
 ## Las acciones
 
@@ -54,16 +92,21 @@ Los botones de abajo, o las teclas `1` a `6`:
 | Dormir | `5` | Se duerme y recupera energía. Vuelve a pulsar para despertarla |
 | Acariciar | `6` | Sube un poco el ánimo, gratis |
 
-El **último botón cambia según la especie**: Gastly puede *Asustar*, el dragón
-*Escupir fuego* y el gato *Acicalarse*. El perro no tiene acción propia.
+El **último botón cambia según la especie**: el conejo puede *Saltar*, que le
+sube mucho el ánimo a cambio de energía y de ensuciarse; el castor puede
+*Roer*, que le anima y le abre el apetito.
 
-Debajo de las barras, la **bitácora** va contando lo que pasa: qué comió, cuándo
-se durmió, cuándo se puso enferma.
+Al pulsar **Asear** la mascota se baña: aparece llena de espuma unos segundos y
+después vuelve a lo que estaba haciendo.
+
+Abajo a la izquierda, la **bitácora** va contando lo que pasa como un teletipo:
+qué comió, cuándo se durmió, cuándo se puso enferma.
 
 ## Los ocho estados
 
-La mascota está siempre en uno de estos estados, y el juego lo muestra debajo de
-su nombre.
+La mascota está siempre en uno de estos estados. El nombre del estado aparece
+arriba a la derecha, y cada vez que cambia se anuncia en grande en mitad de la
+pantalla.
 
 | Estado | Cuándo ocurre |
 |--------|---------------|
@@ -74,7 +117,7 @@ su nombre.
 | **Durmiendo** | Le has dicho que duerma, o se ha desmayado de agotamiento |
 | **Enferma** | La salud baja de 30. Sólo mejora con medicina |
 | **Jugando** | Estado temporal de unos segundos |
-| **Muerta** | La salud llegó a cero. No hay vuelta atrás |
+| **Muerta** | La salud llegó a cero. Se anuncia con un **K.O.** y no hay vuelta atrás |
 
 Cuando hay varias necesidades a la vez, mandan por este orden: **muerte,
 enfermedad, hambre, cansancio**.
@@ -100,9 +143,15 @@ a `game.exe`. Si compilaste tú, cópialas de `C:\msys64\ucrt64\bin`.
 Estás ejecutándolo desde otra carpeta. El juego busca `assets/` con rutas
 relativas, así que hay que lanzarlo desde la raíz del proyecto.
 
-**Se abre sin fuente bonita.**
-Es normal: si no encuentras `assets/fonts/fuente.ttf`, el juego usa una fuente
-del sistema. No afecta a nada más.
+**Las letras no se ven como en las capturas.**
+Falta la tipografía. El juego usa `VCR_OSD_MONO_1.001.ttf`, que está en
+`assets/fonts/`; si no la encuentra, tira de una fuente del sistema. No afecta
+a nada más.
+
+**No se oye la música.**
+Mira en **Opciones** que esté encendida y que el volumen no esté a cero. La
+tecla `M` también la silencia desde el menú.
 
 **Se me murió la mascota.**
-No se puede revivir desde el juego. Cierra, borra `partida.txt` y empieza otra.
+No se puede revivir desde el juego. Entra en **Opciones → Borrar partida** y
+empieza otra.

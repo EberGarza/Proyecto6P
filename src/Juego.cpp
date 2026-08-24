@@ -1,6 +1,8 @@
 #include "Juego.hpp"
 
 #include "PantallaJuego.hpp"
+#include "PantallaMenu.hpp"
+#include "PantallaOpciones.hpp"
 #include "PantallaSeleccion.hpp"
 #include "Tema.hpp"
 
@@ -20,7 +22,9 @@ bool Juego::cargarFuente()
 {
     // Se prueba primero la fuente del proyecto y, si no esta, alguna del
     // sistema. Asi el juego arranca aunque la carpeta assets siga vacia.
-    static const std::array<const char*, 5> rutas {
+    static const std::array<const char*, 7> rutas {
+        "assets/fonts/VCR_OSD_MONO_1.001.ttf",   // la misma del Proyecto3P
+        "assets/fonts/04B_30__.TTF",
         "assets/fonts/fuente.ttf",
         "C:/Windows/Fonts/segoeui.ttf",
         "C:/Windows/Fonts/arial.ttf",
@@ -48,7 +52,7 @@ bool Juego::inicializar()
 
     if (!cargarFuente()) return false;
 
-    cambiarPantalla(Pantalla::Transicion::Seleccion);
+    cambiarPantalla(Pantalla::Transicion::Menu);
 
     listo_ = pantalla_ != nullptr;
     return listo_;
@@ -61,6 +65,16 @@ void Juego::cambiarPantalla(Pantalla::Transicion destino)
 
     switch (destino)
     {
+        case Pantalla::Transicion::Menu:
+            pantalla_ = std::make_unique<PantallaMenu>(
+                fuentes_.obtener("principal"), tamano);
+            break;
+
+        case Pantalla::Transicion::Opciones:
+            pantalla_ = std::make_unique<PantallaOpciones>(
+                fuentes_.obtener("principal"), tamano);
+            break;
+
         case Pantalla::Transicion::Seleccion:
             pantalla_ = std::make_unique<PantallaSeleccion>(
                 fuentes_.obtener("principal"), tamano);

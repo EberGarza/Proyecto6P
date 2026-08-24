@@ -9,7 +9,7 @@ namespace vp {
 
 void EstadoNormal::alEntrar(Mascota& mascota)
 {
-    mascota.registrar(mascota.nombre() + " esta tranquila.");
+    mascota.registrar(mascota.nombre() + " esta tranquil" + mascota.terminacion() + ".");
 }
 
 void EstadoNormal::actualizar(Mascota& mascota, float)
@@ -93,7 +93,7 @@ std::string EstadoHambrienta::mensaje() const
 
 void EstadoCansada::alEntrar(Mascota& mascota)
 {
-    mascota.registrar(mascota.nombre() + " esta cansada.");
+    mascota.registrar(mascota.nombre() + " esta cansad" + mascota.terminacion() + ".");
 }
 
 void EstadoCansada::actualizar(Mascota& mascota, float)

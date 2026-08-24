@@ -19,6 +19,8 @@ public:
     enum class Transicion
     {
         Ninguna,     ///< seguir en esta pantalla
+        Menu,        ///< volver al menu principal
+        Opciones,    ///< ir a la pantalla de opciones
         Seleccion,   ///< ir a la pantalla de eleccion de mascota
         Juego,       ///< ir a la pantalla de juego
         Salir        ///< cerrar la aplicacion

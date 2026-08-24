@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Atributo.hpp"
+#include "Genero.hpp"
 #include "MaquinaEstados.hpp"
 #include "TipoEstado.hpp"
 
@@ -17,7 +18,11 @@ class Estado;
  *
  * Concentra lo que comparten todas las especies: los cinco atributos, la edad,
  * la maquina de estados y las acciones del jugador. Cada especie concreta
- * (Perro, Gato, Dragon) hereda de aqui y define su comportamiento propio.
+ * (Conejo, Castor) hereda de aqui y define su comportamiento propio.
+ *
+ * El genero vive aqui y no en las especies porque no es un rasgo de la
+ * especie: cualquier mascota puede ser macho o hembra, y lo unico que cambia
+ * es la hoja de sprites que se carga y como se habla de ella.
  *
  * Nota de diseno: configurarRasgos() es virtual pura, pero NO se puede llamar
  * desde el constructor de Mascota, porque durante la construccion de la clase
@@ -27,7 +32,7 @@ class Estado;
 class Mascota
 {
 public:
-    explicit Mascota(std::string nombre);
+    Mascota(std::string nombre, Genero genero);
     virtual ~Mascota() = default;
 
     // Una mascota es una entidad unica: no se copia.
@@ -58,6 +63,28 @@ public:
 
     const std::string& nombre() const            { return nombre_; }
     void establecerNombre(const std::string& n)  { nombre_ = n; }
+
+    Genero genero() const                        { return genero_; }
+    void   establecerGenero(Genero g)            { genero_ = g; }
+
+    /// Nombre base de su hoja de sprites: "conejo_macho", "castor_hembra".
+    /// Vive en la capa logica porque es solo texto; quien lo convierte en una
+    /// ruta de archivo es la capa grafica.
+    std::string claveArte() const;
+
+    /**
+     * @brief Vocal de concordancia: "o" para macho, "a" para hembra.
+     *
+     * Los mensajes de la bitacora hablan de la mascota por su nombre, asi que
+     * los adjetivos tienen que concordar con su sexo. Se escriben cortados:
+     * `nombre() + " esta cansad" + terminacion() + "."`. Es feo de leer en el
+     * codigo, pero es la unica forma de que el texto salga bien sin duplicar
+     * cada frase.
+     */
+    std::string terminacion() const;
+
+    /// Pronombre de objeto directo: "lo" o "la". Para frases como "banarlo".
+    std::string pronombre() const;
 
     float edad() const                           { return edadSegundos_; }
     void  establecerEdad(float segundos)         { edadSegundos_ = segundos; }
@@ -130,6 +157,7 @@ private:
     void aplicarEfectosSecundarios(float dt);
 
     std::string nombre_;
+    Genero      genero_       = Genero::Macho;
     float       edadSegundos_ = 0.f;
     bool        viva_         = true;
 

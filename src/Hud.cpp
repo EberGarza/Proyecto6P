@@ -1,78 +1,97 @@
 #include "Hud.hpp"
 
-#include "Tema.hpp"
 #include "Mascota.hpp"
 #include "Utilidades.hpp"
 
 namespace vp {
+namespace {
 
-Hud::Hud(const sf::Font& fuente, sf::Vector2f origen, sf::Vector2f tamano)
-    : titulo_        (fuente, "",         tema::kTextoTitulo)
-    , subtitulo_     (fuente, "",         tema::kTextoChico)
-    , estado_        (fuente, "",         tema::kTextoNormal)
-    , tituloBitacora_(fuente, "BITACORA", tema::kTextoChico)
-    , bitacora_      (fuente, "",         tema::kTextoChico)
+constexpr float kMargen      = 20.f;
+constexpr float kAltoSalud   = 20.f;
+constexpr float kAltoMenor   = 14.f;
+constexpr float kHuecoMenor  = 14.f;
+
+} // namespace sin nombre
+
+Hud::Hud(const sf::Font& fuente, sf::Vector2f tamanoVentana, float alturaTira)
+    : tamanoVentana_(tamanoVentana)
+    , nombre_  (fuente, "", 24)
+    , especie_ (fuente, "", 13)
+    , estado_  (fuente, "", 20)
+    , bitacora_(fuente, "", 12)
 {
-    panel_.setPosition(origen);
-    panel_.setSize(tamano);
-    panel_.setFillColor(tema::kPanel);
-    panel_.setOutlineThickness(1.f);
-    panel_.setOutlineColor(tema::kPanelBorde);
+    const float ancho = tamanoVentana_.x - kMargen * 2.f;
 
-    const float x = origen.x + 18.f;
-    float       y = origen.y + 16.f;
+    tira_ = tema::panelBiselado({ 0.f, 0.f }, { tamanoVentana_.x, alturaTira });
 
-    titulo_.setFillColor(tema::kTexto);
-    titulo_.setPosition({ x, y });            y += 30.f;
+    // --- Chapa con el nombre, arriba a la izquierda ---
+    chapaNombre_ = tema::panelBiselado({ kMargen, 8.f }, { 320.f, 30.f },
+                                       tema::kPanelBorde);
 
-    subtitulo_.setFillColor(tema::kTextoTenue);
-    subtitulo_.setPosition({ x, y });         y += 22.f;
+    nombre_.setFillColor(tema::kAcento);
+    nombre_.setPosition({ kMargen + 10.f, 8.f });
 
-    estado_.setFillColor(tema::kAcento);
-    estado_.setPosition({ x, y });            y += 34.f;
+    // La especie y la edad van a la derecha de la chapa, en la misma fila: si
+    // se ponen debajo chocan con la etiqueta de la barra de SALUD.
+    especie_.setFillColor(tema::kTextoSuave);
+    especie_.setPosition({ kMargen + 340.f, 18.f });
 
-    const char* etiquetas[] = { "Saciedad", "Felicidad", "Energia", "Higiene", "Salud" };
+    // --- Estado, a la derecha, como el marcador de asalto ---
+    estado_.setFillColor(tema::kTexto);
 
-    // Se deja hueco a la derecha de cada barra para el numero.
-    const sf::Vector2f tamanoBarra(tamano.x - 36.f - 34.f, 20.f);
-
+    // --- Barras ---
+    // Una grande de SALUD que cruza la pantalla, y cuatro menores debajo.
     barras_.reserve(5);
-    for (const char* etiqueta : etiquetas)
+    barras_.emplace_back(fuente, "SALUD", sf::Vector2f{ kMargen, 62.f },
+                         sf::Vector2f{ ancho, kAltoSalud });
+
+    const char* menores[] = { "SACIEDAD", "FELICIDAD", "ENERGIA", "HIGIENE" };
+    const float anchoMenor = (ancho - kHuecoMenor * 3.f) / 4.f;
+
+    for (int i = 0; i < 4; ++i)
     {
-        barras_.emplace_back(fuente, etiqueta, sf::Vector2f(x, y), tamanoBarra);
-        y += tamanoBarra.y + 10.f;
+        barras_.emplace_back(fuente, menores[i],
+                             sf::Vector2f{ kMargen + i * (anchoMenor + kHuecoMenor), 108.f },
+                             sf::Vector2f{ anchoMenor, kAltoMenor });
     }
 
-    y += 14.f;
-    tituloBitacora_.setFillColor(tema::kTextoTenue);
-    tituloBitacora_.setPosition({ x, y });    y += 20.f;
+    // --- Teletipo de la bitacora, abajo del escenario ---
+    const float altoTeletipo = 74.f;
+    fondoBitacora_.setSize({ 340.f, altoTeletipo });
+    fondoBitacora_.setPosition({ kMargen, tamanoVentana_.y - 118.f - altoTeletipo - 6.f });
+    fondoBitacora_.setFillColor(sf::Color(12, 8, 20, 170));
 
     bitacora_.setFillColor(tema::kTextoSuave);
-    bitacora_.setPosition({ x, y });
-    bitacora_.setLineSpacing(1.35f);
+    bitacora_.setLineSpacing(1.3f);
+    bitacora_.setPosition({ fondoBitacora_.getPosition().x + 8.f,
+                            fondoBitacora_.getPosition().y + 6.f });
 }
 
-void Hud::actualizar(const Mascota& mascota)
+void Hud::actualizar(const Mascota& mascota, float dt)
 {
-    barras_[0].actualizar(mascota.saciedad());
-    barras_[1].actualizar(mascota.felicidad());
-    barras_[2].actualizar(mascota.energia());
-    barras_[3].actualizar(mascota.higiene());
-    barras_[4].actualizar(mascota.salud());
+    barras_[0].actualizar(mascota.salud(), dt);
+    barras_[1].actualizar(mascota.saciedad(), dt);
+    barras_[2].actualizar(mascota.felicidad(), dt);
+    barras_[3].actualizar(mascota.energia(), dt);
+    barras_[4].actualizar(mascota.higiene(), dt);
 
-    titulo_.setString(mascota.nombre());
-    subtitulo_.setString(mascota.especie() + "  |  edad " +
-                         util::formatearTiempo(mascota.edad()));
-    estado_.setString(mascota.estado().nombre() + " - " + mascota.estado().mensaje());
+    nombre_.setString(mascota.nombre());
+    especie_.setString(mascota.especie() + "   " + util::formatearTiempo(mascota.edad()));
 
-    // Se muestran las ultimas lineas de la bitacora, de la mas nueva hacia atras.
+    // El estado va a la derecha del todo, alineado por su borde derecho.
+    estado_.setString(mascota.estado().nombre());
+    estado_.setFillColor(mascota.estaViva() ? tema::kAcento : tema::kMal);
+    sf::FloatRect limites = estado_.getLocalBounds();
+    estado_.setPosition({ tamanoVentana_.x - kMargen - limites.size.x - 10.f, 8.f });
+
+    // Bitacora: de lo mas reciente hacia atras.
     const auto& registro = mascota.bitacora();
     std::string texto;
     std::size_t mostradas = 0;
 
     for (auto it = registro.rbegin(); it != registro.rend() && mostradas < kLineasBitacora; ++it)
     {
-        texto += "- " + *it + "\n";
+        texto += "> " + *it + "\n";
         ++mostradas;
     }
     bitacora_.setString(texto);
@@ -80,16 +99,18 @@ void Hud::actualizar(const Mascota& mascota)
 
 void Hud::draw(sf::RenderTarget& objetivo, sf::RenderStates estados) const
 {
-    objetivo.draw(panel_,     estados);
-    objetivo.draw(titulo_,    estados);
-    objetivo.draw(subtitulo_, estados);
-    objetivo.draw(estado_,    estados);
+    tira_.dibujar(objetivo);
+    chapaNombre_.dibujar(objetivo);
+
+    tema::dibujarConSombra(objetivo, nombre_);
+    tema::dibujarConSombra(objetivo, especie_);
+    tema::dibujarConSombra(objetivo, estado_);
 
     for (const BarraAtributo& barra : barras_)
         objetivo.draw(barra, estados);
 
-    objetivo.draw(tituloBitacora_, estados);
-    objetivo.draw(bitacora_,       estados);
+    objetivo.draw(fondoBitacora_, estados);
+    objetivo.draw(bitacora_, estados);
 }
 
 } // namespace vp

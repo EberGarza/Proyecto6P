@@ -17,17 +17,17 @@ std::string enMinusculas(std::string texto)
 
 } // namespace sin nombre
 
-std::string RenderSprite::rutaDe(const std::string& especie)
+std::string RenderSprite::rutaDe(const std::string& clave)
 {
-    return "assets/images/" + enMinusculas(especie) + ".txt";
+    return "assets/images/" + enMinusculas(clave) + ".txt";
 }
 
-bool RenderSprite::cargar(const std::string& especie)
+bool RenderSprite::cargar(const std::string& clave)
 {
     listo_ = false;
     sprite_.reset();
 
-    if (!hoja_.cargar(rutaDe(especie))) return false;
+    if (!hoja_.cargar(rutaDe(clave))) return false;
 
     // Sin animacion de Normal no hay respaldo para los estados sin dibujo.
     const Animacion* base = hoja_.animacion(TipoEstado::Normal);
@@ -55,22 +55,56 @@ void RenderSprite::actualizar(const Mascota& mascota, float dt)
 
     if (tipo != estadoDibujado_)
     {
+        // Un cambio de estado manda sobre la accion en curso: si la mascota se
+        // duerme a mitad del bano, lo que hay que ver es que se durmio.
         estadoDibujado_ = tipo;
-
-        // Si el estado no tiene dibujo propio se recurre al de Normal; el
-        // tinte declarado en el archivo se encarga de diferenciarlo.
-        const Animacion* nueva = hoja_.animacion(tipo);
-        if (!nueva) nueva = hoja_.animacion(TipoEstado::Normal);
-        if (nueva) animacion_ = *nueva;
-
-        animacion_.reiniciar();
-        sprite_->setColor(hoja_.tinte(tipo));
+        enAccion_       = false;
+        volverAlEstado();
     }
 
     animacion_.actualizar(*sprite_, dt);
 
+    // Las animaciones de accion no van en bucle: cuando llegan al ultimo
+    // cuadro se devuelve el sprite al estado en el que este la mascota.
+    if (enAccion_ && animacion_.terminada())
+    {
+        enAccion_ = false;
+        volverAlEstado();
+    }
+
     // El cuadro que acaba de aplicarse trae su propio origen, asi que hay que
     // recolocar el sprite en la rejilla de pixeles despues de cada cambio.
+    ajustarAPixel();
+}
+
+void RenderSprite::volverAlEstado()
+{
+    if (!sprite_) return;
+
+    // Si el estado no tiene dibujo propio se recurre al de Normal; el tinte
+    // declarado en el archivo se encarga de diferenciarlo.
+    const Animacion* nueva = hoja_.animacion(estadoDibujado_);
+    if (!nueva) nueva = hoja_.animacion(TipoEstado::Normal);
+    if (nueva) animacion_ = *nueva;
+
+    animacion_.reiniciar();
+    sprite_->setColor(hoja_.tinte(estadoDibujado_));
+}
+
+void RenderSprite::reproducirAccion(const std::string& nombre)
+{
+    if (!listo_ || !sprite_) return;
+
+    const Animacion* accion = hoja_.accion(nombre);
+    if (!accion) return;          // esta hoja no dibuja esa accion
+
+    animacion_ = *accion;
+    animacion_.reiniciar();
+    enAccion_ = true;
+
+    // El primer cuadro se aplica ya, para que la accion se note en el mismo
+    // fotograma en que se pulsa el boton.
+    animacion_.aplicarCuadroActual(*sprite_);
     ajustarAPixel();
 }
 
@@ -101,8 +135,8 @@ void RenderSprite::ajustarAPixel()
 {
     if (!sprite_) return;
 
-    // Los anclajes son fraccionarios (se midieron sobre la cara) y la posicion
-    // del escenario tambien lo es. Si la esquina de la textura cae entre dos
+    // Los anclajes pueden ser fraccionarios y la posicion del escenario
+    // tambien lo es. Si la esquina de la textura cae entre dos
     // pixeles, el muestreo por vecino mas cercano hace que una fila o columna
     // se desplace de un fotograma a otro: es el hormigueo tipico del pixel art.
     //

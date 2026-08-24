@@ -20,8 +20,8 @@ namespace vp {
  *
  * Uso:
  *   GestorRecursos<sf::Texture> texturas;
- *   texturas.cargar("perro", "assets/images/perro.png");
- *   sprite.setTexture(texturas.obtener("perro"));
+ *   texturas.cargar("conejo", "assets/images/conejo_macho.png");
+ *   sprite.setTexture(texturas.obtener("conejo"));
  */
 template <typename Recurso>
 class GestorRecursos

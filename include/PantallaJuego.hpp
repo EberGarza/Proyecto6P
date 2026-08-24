@@ -2,6 +2,7 @@
 
 #include "Boton.hpp"
 #include "Hud.hpp"
+#include "Tema.hpp"
 #include "PanelAdmin.hpp"
 #include "Pantalla.hpp"
 #include "VistaMascota.hpp"
@@ -12,6 +13,8 @@
 #include <SFML/Graphics.hpp>
 
 #include <memory>
+#include <optional>
+#include <string>
 #include <vector>
 
 namespace vp {
@@ -40,6 +43,9 @@ public:
 
 private:
     void crearBotones();
+    void construirEscenario();
+    void construirBarrido();
+    void anunciar(const std::string& texto, sf::Color color);
 
     const sf::Font&              fuente_;
     std::unique_ptr<Mascota>     mascota_;
@@ -52,9 +58,23 @@ private:
     AdminMenu                    admin_;
     PanelAdmin                   panelAdmin_;
 
-    sf::RectangleShape           escenario_;
+    /// Fondo del escenario: la mascota repetida en mosaico, compuesta una vez.
+    sf::RenderTexture            lienzoEscenario_;
+    std::optional<sf::Sprite>    escenario_;
+
+    /// Rejilla de lineas horizontales que imita el barrido de un monitor CRT.
+    sf::VertexArray              barrido_;
+
+    tema::PanelBiselado          panelBotonera_;
     sf::Text                     pie_;
+
+    /// Cartel grande en mitad del escenario cuando la mascota cambia de estado.
+    sf::Text                     anuncio_;
+    float                        anuncioRestante_ = 0.f;
+    TipoEstado                   estadoAnunciado_ = TipoEstado::Normal;
+
     sf::Vector2f                 tamanoVentana_;
+    sf::Vector2f                 centroEscenario_ { 0.f, 0.f };
     sf::Vector2f                 raton_ { 0.f, 0.f };
     float                        fps_ = 0.f;
 };
