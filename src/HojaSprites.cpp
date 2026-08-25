@@ -54,9 +54,6 @@ bool HojaSprites::cargar(const std::string& rutaConfig)
     sf::Color   fondo(255, 255, 255);
     int         tolerancia = 0;
 
-    // Animacion que se esta construyendo en este momento. Puede ser la de un
-    // estado o la de una accion; se distinguen por accionActual, que esta
-    // vacio cuando el nombre leido si era un estado.
     bool                enConstruccion = false;
     TipoEstado          estadoActual   = TipoEstado::Normal;
     std::string         accionActual;
@@ -82,7 +79,7 @@ bool HojaSprites::cargar(const std::string& rutaConfig)
 
     while (std::getline(archivo, linea))
     {
-        // Tolera archivos guardados en Windows y quita los comentarios.
+
         if (!linea.empty() && linea.back() == '\r') linea.pop_back();
         const std::size_t comentario = linea.find('#');
         if (comentario != std::string::npos) linea = linea.substr(0, comentario);
@@ -93,7 +90,7 @@ bool HojaSprites::cargar(const std::string& rutaConfig)
 
         if (clave == "imagen")
         {
-            // El nombre puede llevar espacios, asi que se toma el resto de la linea.
+
             std::string resto;
             std::getline(campos, resto);
 
@@ -133,10 +130,6 @@ bool HojaSprites::cargar(const std::string& rutaConfig)
             if (!(campos >> bucle)) bucle = 1;
             enBucle = (bucle != 0);
 
-            // Un nombre que no corresponde a ningun estado no es un error: es
-            // una animacion de accion (banarse, comer), algo que la mascota
-            // hace un momento y termina. Se guarda aparte, con su nombre, y
-            // quien la quiera la pide por el.
             enConstruccion = true;
 
             if (!estadoDesdeNombre(nombreEstadoLeido, estadoActual))
@@ -150,8 +143,6 @@ bool HojaSprites::cargar(const std::string& rutaConfig)
             TipoEstado destino = estadoActual;
             std::string nombreEstadoLeido;
 
-            // "tinte Estado r g b" tambien es valido, para tenir una animacion
-            // que se declara mas adelante o que se reutiliza de otro estado.
             if (!enConstruccion && campos >> nombreEstadoLeido)
                 estadoDesdeNombre(nombreEstadoLeido, destino);
 
@@ -161,7 +152,7 @@ bool HojaSprites::cargar(const std::string& rutaConfig)
         }
         else if (clave == "cuadro")
         {
-            if (!enConstruccion) continue;   // cuadro suelto, sin animacion abierta
+            if (!enConstruccion) continue;
 
             int x = 0, y = 0, w = 0, h = 0;
             if (!(campos >> x >> y >> w >> h)) continue;
@@ -198,11 +189,8 @@ bool HojaSprites::cargar(const std::string& rutaConfig)
         error_ = "No se pudo crear la textura de " + rutaCompleta;
         return false;
     }
-    textura_.setSmooth(false);   // pixel art: sin suavizado
+    textura_.setSmooth(false);
 
-    // Cierra la ultima animacion del archivo. Las Animacion guardan un puntero
-    // a textura_, que es un miembro: su direccion no cambia aunque la imagen
-    // se cargue despues de haberlas construido.
     cerrarAnimacion();
 
     valida_ = !animaciones_.empty();
@@ -240,4 +228,4 @@ sf::Color HojaSprites::tinte(TipoEstado tipo) const
     return (it == tintes_.end()) ? sf::Color::White : it->second;
 }
 
-} // namespace vp
+}

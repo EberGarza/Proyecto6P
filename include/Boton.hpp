@@ -10,13 +10,6 @@
 
 namespace vp {
 
-/**
- * @brief Boton rectangular con texto y una accion asociada.
- *
- * La accion se guarda como std::function, asi que el boton no necesita saber
- * nada de la mascota: quien lo crea le dice que debe hacer al pulsarlo. Eso
- * mantiene la interfaz desacoplada de la logica del juego.
- */
 class Boton : public sf::Drawable
 {
 public:
@@ -25,23 +18,23 @@ public:
     Boton(const sf::Font& fuente, std::string etiqueta,
           sf::Vector2f posicion, sf::Vector2f tamano, Accion accion = nullptr);
 
-    /// Actualiza el resaltado segun donde este el raton.
     void actualizar(sf::Vector2f posicionRaton);
 
-    /// Devuelve true si el clic cayo dentro (y en ese caso ejecuta la accion).
     bool procesarClic(sf::Vector2f posicionClic);
 
-    /// Ejecuta la accion sin pasar por el raton, para los atajos de teclado.
-    /// Devuelve false si el boton esta apagado.
     bool accionar();
 
     void establecerAccion(Accion accion)  { accion_ = std::move(accion); }
+
     void establecerHabilitado(bool habilitado);
+
+    void establecerDisponible(bool disponible);
+
+    void establecerEtiqueta(const std::string& etiqueta);
     void establecerColores(sf::Color base, sf::Color resaltado);
-    void establecerActivo(bool activo);        ///< marca el boton como "encendido"
+    void establecerActivo(bool activo);
     void establecerTamanoTexto(unsigned tamano);
 
-    /// Etiqueta del atajo de teclado que se dibuja en la esquina del boton.
     void establecerTecla(const std::string& etiquetaTecla);
 
     bool habilitado() const { return habilitado_; }
@@ -69,7 +62,8 @@ private:
 
     bool resaltado_  = false;
     bool habilitado_ = true;
+    bool disponible_ = true;
     bool activo_     = false;
 };
 
-} // namespace vp
+}

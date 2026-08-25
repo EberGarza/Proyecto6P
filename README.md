@@ -25,8 +25,11 @@ toda la estructura de clases.
   tiene sus propias tasas de desgaste, su sonido y una acción exclusiva; cada
   combinación de especie y género, su propia hoja de sprites.
 - **Nombre libre**: el campo empieza vacío y no se puede empezar sin escribir uno.
-- **Acciones progresivas**: comer, jugar, asear y medicar no son instantáneos.
-  La mascota se pone a ello, la animación se repite y la barra sube poco a poco.
+- **Acciones progresivas y exclusivas**: comer, jugar, asear y medicar no son
+  instantáneos. La mascota se pone a ello, la animación se repite y la barra
+  sube poco a poco — y mientras dure **no acepta ninguna otra acción**. Un solo
+  método, `Mascota::puede()`, decide qué se puede hacer en cada momento, y de
+  ahí salen tanto el rechazo como los botones que se apagan.
 - **Despensa con cuatro comidas**, cada una con su cantidad y sus raciones. Lo
   que alimenta decide también cuánto dura la animación de comer.
 - **Ritmo pausado**: las barras tardan entre 9 y 17 minutos en vaciarse, según
@@ -34,8 +37,10 @@ toda la estructura de clases.
 - **Efectos cruzados entre necesidades**: la salud no baja sola, baja cuando
   descuidas la comida, la higiene o el ánimo. Y sube si cuidas bien.
 - **Animación por hoja de sprites** descrita en un archivo de texto que se
-  puede ajustar sin recompilar, con animaciones de estado y de acción (comer,
-  bañarse) que se repiten mientras dure la acción.
+  puede ajustar sin recompilar: doce animaciones por especie y género, entre
+  estados (normal, feliz, hambrienta, durmiendo, jugando, enferma, muerta) y
+  acciones (comer, bañarse, medicarse, mimos y la propia de cada especie), que
+  se repiten mientras dure la acción.
 - **Dibujo de respaldo**: las especies sin arte se dibujan con figuras
   geométricas, así que el juego siempre se ve.
 - **Guardado automático** al salir, en un archivo de texto legible.
@@ -201,6 +206,8 @@ mingw32-make clean
 ![Opciones](./assets/images/screenshots/opciones.png)
 ![Jugando](./assets/images/screenshots/jugando.png)
 ![Despensa](./assets/images/screenshots/despensa.png)
+![Ocupada](./assets/images/screenshots/ocupada.png)
+![Durmiendo](./assets/images/screenshots/durmiendo.png)
 ![Telemetria](./assets/images/screenshots/telemetria.png)
 ![Admin_Menu](./assets/images/screenshots/admin_menu.png)
 

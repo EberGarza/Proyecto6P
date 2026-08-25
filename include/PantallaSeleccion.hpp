@@ -16,17 +16,6 @@
 
 namespace vp {
 
-/**
- * @brief Pantalla inicial: elegir especie y genero, poner nombre y empezar.
- *
- * La vista previa usa la misma clase VistaMascota que la partida, asi que lo
- * que se ve aqui es exactamente lo que se vera jugando: al cambiar de especie
- * o de genero se recarga la hoja de sprites que corresponde.
- *
- * El nombre empieza VACIO a proposito, para que cada quien ponga el suyo en
- * vez de tener que borrar uno puesto por el juego. Mientras este vacio, el
- * boton de comenzar esta apagado: sin nombre no se puede jugar.
- */
 class PantallaSeleccion : public Pantalla
 {
 public:
@@ -36,7 +25,6 @@ public:
     void actualizar(float dt) override;
     void dibujar(sf::RenderTarget& objetivo) const override;
 
-    /// Entrega la mascota creada. Despues de llamarla, la pantalla ya no la tiene.
     std::unique_ptr<Mascota> tomarMascota();
 
 private:
@@ -44,10 +32,8 @@ private:
     void elegirEspecie(TipoMascota tipo);
     void elegirGenero(Genero genero);
 
-    /// Rehace la mascota de la vista previa con la especie y el genero actuales.
     void refrescarPrevia();
 
-    /// Enciende o apaga el boton de comenzar segun haya nombre o no.
     void refrescarComenzar();
 
     void confirmar();
@@ -55,7 +41,6 @@ private:
     void escribir(char32_t caracter);
     void centrar(sf::Text& texto, float y) const;
 
-    /// Nombre con el que se crea la mascota mientras el jugador no escriba uno.
     std::string nombreParaMostrar() const;
 
     const sf::Font&              fuente_;
@@ -65,8 +50,6 @@ private:
     std::unique_ptr<Mascota> mascota_;
     VistaMascota             vista_;
 
-    // Los botones viven todos en el mismo vector, asi que hay que saber por
-    // donde empieza cada grupo para poder resaltar el elegido.
     std::size_t inicioEspecies_ = 0;
     std::size_t inicioGeneros_  = 0;
     std::size_t indiceComenzar_ = 0;
@@ -92,4 +75,4 @@ private:
     static constexpr std::size_t kMaxNombre = 14;
 };
 
-} // namespace vp
+}

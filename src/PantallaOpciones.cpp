@@ -17,11 +17,10 @@ const sf::Color kFondoBase(38, 26, 54);
 constexpr unsigned kTamTitulo = 44;
 constexpr unsigned kTamFila   = 22;
 
-/// Anchos de la barra de volumen dentro de su placa.
 constexpr float kAnchoBarra = 150.f;
 constexpr float kAltoBarra  = 14.f;
 
-} // namespace sin nombre
+}
 
 PantallaOpciones::PantallaOpciones(const sf::Font& fuente, sf::Vector2f tamanoVentana)
     : fuente_(fuente)
@@ -30,7 +29,7 @@ PantallaOpciones::PantallaOpciones(const sf::Font& fuente, sf::Vector2f tamanoVe
     , pie_(fuente, "ARRIBA/ABAJO ELEGIR    IZQ/DER AJUSTAR    ESC VOLVER",
            tema::kTextoChico)
 {
-    // El mismo mosaico del menu, para que las dos pantallas se reconozcan.
+
     if (componerMosaico(lienzoFondo_, tamanoVentana_,
                         { "assets/images/conejo_hembra.txt",
                           "assets/images/castor_hembra.txt" },
@@ -54,7 +53,7 @@ PantallaOpciones::PantallaOpciones(const sf::Font& fuente, sf::Vector2f tamanoVe
 
 void PantallaOpciones::construirInterfaz()
 {
-    // --- Marquesina del titulo, igual que en el menu -------------------------
+
     const sf::Vector2f tamanoMarco(420.f, 84.f);
     const sf::Vector2f posMarco((tamanoVentana_.x - tamanoMarco.x) / 2.f, 52.f);
     marquesina_ = tema::panelBiselado(posMarco, tamanoMarco, tema::kPanelBorde);
@@ -65,7 +64,6 @@ void PantallaOpciones::construirInterfaz()
                         lt.position.y + lt.size.y / 2.f });
     titulo_.setPosition({ tamanoVentana_.x / 2.f, posMarco.y + tamanoMarco.y / 2.f });
 
-    // --- Filas ---------------------------------------------------------------
     const auto  total     = static_cast<std::size_t>(Fila::Total);
     const float altoTotal = total * kAltoPlaca + (total - 1) * kHuecoPlaca;
     const float inicioY   = (tamanoVentana_.y - altoTotal) / 2.f + 30.f;
@@ -88,7 +86,6 @@ void PantallaOpciones::construirInterfaz()
         valores_.back().setPosition({ x + 250.f, y + 12.f });
     }
 
-    // La barra del volumen va en su fila, a la derecha de la etiqueta.
     const float yVolumen = inicioY + static_cast<float>(Fila::Volumen) *
                                      (kAltoPlaca + kHuecoPlaca);
     origenVolumen_ = { x + kAnchoPlaca - 28.f - 52.f - kAnchoBarra,
@@ -100,14 +97,12 @@ void PantallaOpciones::construirInterfaz()
     fondoVolumen_.setOutlineThickness(1.f);
     fondoVolumen_.setOutlineColor(tema::kPanelBorde);
 
-    // --- Senalador -----------------------------------------------------------
     senalador_.setPointCount(3);
     senalador_.setPoint(0, { 0.f,  0.f });
     senalador_.setPoint(1, { 14.f, 8.f });
     senalador_.setPoint(2, { 0.f, 16.f });
     senalador_.setFillColor(kAmarillo);
 
-    // --- Tira inferior -------------------------------------------------------
     const float altoTira = 34.f;
     tiraPie_ = tema::panelBiselado({ 0.f, tamanoVentana_.y - altoTira },
                                    { tamanoVentana_.x, altoTira });
@@ -137,16 +132,12 @@ void PantallaOpciones::refrescarTextos()
         etiquetas_[i].setString(etiquetas[i]);
         valores_[i].setString(valores[i]);
 
-        // Los valores se alinean por su borde derecho, no por el izquierdo:
-        // asi quedan en columna y ninguno se come la etiqueta de su fila por
-        // largo que sea el texto.
         sf::Text& valor = valores_[i];
         const sf::FloatRect lv = valor.getLocalBounds();
         valor.setOrigin({ lv.position.x + lv.size.x, lv.position.y });
         valor.setPosition({ derecha, valor.getPosition().y });
     }
 
-    // La barra se recorta a la fraccion del volumen actual.
     const float fraccion = static_cast<float>(volumen_) / 100.f;
     barraVolumen_ = tema::paralelogramo(origenVolumen_,
                                         { anchoVolumen_ * fraccion, kAltoBarra }, 5.f);
@@ -247,7 +238,6 @@ void PantallaOpciones::manejarEvento(const sf::Event& evento)
     {
         const sf::Vector2f punto(movimiento->position);
 
-        // Igual que en el menu: solo cuenta si el raton se movio de verdad.
         const bool seMovio = (punto != raton_);
         raton_ = punto;
         if (!seMovio) return;
@@ -291,7 +281,6 @@ void PantallaOpciones::actualizar(float dt)
         valores_[i].setFillColor(elegida ? kAmarillo : tema::kTextoSuave);
     }
 
-    // El senalador acompana a la fila activa, con el mismo vaiven que el menu.
     const sf::FloatRect placa = placas_[seleccion_].getGlobalBounds();
     const float empuje = std::sin(reloj_ * 5.f) * 4.f;
     senalador_.setPosition({ placa.position.x - 30.f + empuje,
@@ -311,7 +300,6 @@ void PantallaOpciones::dibujar(sf::RenderTarget& objetivo) const
         objetivo.draw(placas_[i]);
         objetivo.draw(etiquetas_[i]);
 
-        // La fila del volumen lleva barra ademas del numero.
         if (static_cast<Fila>(i) == Fila::Volumen)
         {
             objetivo.draw(fondoVolumen_);
@@ -329,4 +317,4 @@ void PantallaOpciones::dibujar(sf::RenderTarget& objetivo) const
     objetivo.draw(barrido_);
 }
 
-} // namespace vp
+}

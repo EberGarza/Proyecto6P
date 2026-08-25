@@ -11,28 +11,17 @@ namespace vp {
 
 class Mascota;
 
-/**
- * @brief Fachada de dibujo de la mascota: elige y usa la estrategia adecuada.
- *
- * Al preparar una especie intenta cargar sus sprites; si no hay arte en
- * assets/images/, cae en el dibujo procedural. El resto del juego habla solo
- * con esta clase y no se entera de cual de las dos se esta usando.
- */
 class VistaMascota : public sf::Drawable
 {
 public:
     explicit VistaMascota(const sf::Font& fuente);
 
-    /// Prepara el dibujo para una mascota concreta: cada especie tiene una
-    /// hoja por genero, asi que hace falta la mascota y no solo su especie.
-    /// Devuelve true si encontro sprites.
     bool prepararMascota(const Mascota& mascota);
 
     void actualizar(const Mascota& mascota, float dt);
     void establecerPosicion(sf::Vector2f posicion);
     void establecerEscala(float escala);
 
-    /// Cambia de estrategia a mano (lo usa el Admin_Menu).
     void forzarProcedural();
 
     bool        usandoSprites() const { return usandoSprites_; }
@@ -48,4 +37,4 @@ private:
     bool                           usandoSprites_ = false;
 };
 
-} // namespace vp
+}

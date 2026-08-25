@@ -61,7 +61,6 @@ PanelAdmin::PanelAdmin(const sf::Font& fuente, sf::Vector2f tamanoVentana)
     registro_.setLineSpacing(1.35f);
 }
 
-
 void PanelAdmin::enlazar(AdminMenu& admin, Mascota& mascota,
                          Inventario& inventario, VistaMascota& vista)
 {
@@ -70,7 +69,6 @@ void PanelAdmin::enlazar(AdminMenu& admin, Mascota& mascota,
     const sf::Vector2f tamanoChico(124.f, 30.f);
     const float        paso = tamanoChico.x + 10.f;
 
-    // --- Fila de estados: un boton por cada estado del diagrama --------------
     float x = origenPanel_.x + 22.f;
     float y = origenPanel_.y + 98.f;
     int   columna = 0;
@@ -85,7 +83,6 @@ void PanelAdmin::enlazar(AdminMenu& admin, Mascota& mascota,
         else                    { x += paso; }
     }
 
-    // --- Utilidades ----------------------------------------------------------
     x = origenPanel_.x + 22.f;
     y = origenPanel_.y + 212.f;
     columna = 0;
@@ -111,8 +108,6 @@ void PanelAdmin::enlazar(AdminMenu& admin, Mascota& mascota,
     agregar("+100 monedas",  [&admin, &inventario] { admin.agregarMonedas(inventario, 100); });
     agregar("Modo figuras",  [&vista]           { vista.forzarProcedural(); });
 
-    // Enciende el panel de telemetria de la esquina, que sigue visible aunque
-    // se cierre este menu.
     indiceMetrica_ = botones_.size();
     agregar("Metrica",       [&admin]           { admin.alternarMetrica(); });
 
@@ -124,8 +119,6 @@ bool PanelAdmin::procesarClic(sf::Vector2f punto)
     for (Boton& boton : botones_)
         if (boton.procesarClic(punto)) return true;
 
-    // Aunque no acierte a un boton, el panel se traga el clic para que no
-    // llegue a la interfaz que hay debajo.
     return panel_.getGlobalBounds().contains(punto);
 }
 
@@ -138,12 +131,10 @@ void PanelAdmin::actualizar(sf::Vector2f raton, const AdminMenu& admin,
     for (Boton& boton : botones_)
         boton.actualizar(raton);
 
-    // Se marca el boton del estado en el que esta la mascota ahora mismo.
     const auto estados = todosLosEstados();
     for (std::size_t i = 0; i < estados.size() && i < botones_.size(); ++i)
         botones_[i].establecerActivo(estados[i] == mascota.tipoEstado());
 
-    // Los dos botones que encienden algo se quedan marcados mientras dure.
     if (indiceInmortal_ < botones_.size())
         botones_[indiceInmortal_].establecerActivo(admin.inmortalidad());
     if (indiceMetrica_ < botones_.size())
@@ -160,7 +151,6 @@ void PanelAdmin::actualizar(sf::Vector2f raton, const AdminMenu& admin,
         "Render:      " + std::string(vista.nombreRender())               + "\n" +
         "FPS:         " + util::aTexto(fps));
 
-    // Ultimas acciones ejecutadas desde el menu.
     const auto& lineas = admin.registro();
     std::string texto  = "REGISTRO\n";
     std::size_t contadas = 0;
@@ -189,4 +179,4 @@ void PanelAdmin::draw(sf::RenderTarget& objetivo, sf::RenderStates estados) cons
     objetivo.draw(registro_,    estados);
 }
 
-} // namespace vp
+}

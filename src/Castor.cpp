@@ -12,19 +12,16 @@ Castor::Castor(std::string nombre, Genero genero)
 
 void Castor::configurarRasgos()
 {
-    // Aguanta mas que el conejo: unos 17 minutos hasta quedarse sin comida.
-    // A cambio se aburre antes, que es lo suyo.
-    //                  saciedad  felicidad  energia  higiene
+
     establecerTasasBase(-0.10f,   -0.15f,    -0.08f,  -0.09f);
 
     energia().establecer(100.f);
-    felicidad().establecer(70.f);   // es serio, cuesta animarlo
+    felicidad().establecer(70.f);
 }
 
 std::string Castor::descripcion() const
 {
-    // "Castor" no tiene femenino asentado, asi que la hembra se nombra con un
-    // rodeo en vez de inventar una palabra.
+
     const std::string quien = (genero() == Genero::Macho) ? "un castor"
                                                           : "una hembra de castor";
 
@@ -34,20 +31,14 @@ std::string Castor::descripcion() const
 
 bool Castor::roer()
 {
-    if (!estaViva())                    return false;
-    if (!estado().permiteInteraccion()) return false;
-
-    if (energia().porDebajoDe(15.f))
-    {
-        registrar(nombre() + " mira el tronco, bosteza y lo deja para luego.");
-        return false;
-    }
+    const Permiso permiso = puede(AccionMascota::Especial);
+    if (!permiso) { registrar(permiso.motivo); return false; }
 
     energia().modificar(-10.f);
-    felicidad().modificar(16.f);
-    saciedad().modificar(-8.f);      // roer abre el apetito
-    registrar(nombre() + " parte un tronco de un mordisco. " + sonido());
-    return true;
+    saciedad().modificar(-8.f);
+
+    return iniciarAccionEspecial(16.f, 1.0f,
+                                 nombre() + " parte un tronco de un mordisco. " + sonido());
 }
 
 void Castor::alCambiarEstado(TipoEstado, TipoEstado nuevo)
@@ -60,4 +51,4 @@ void Castor::alCambiarEstado(TipoEstado, TipoEstado nuevo)
         registrar(nombre() + " arrastra la cola de puro cansancio.");
 }
 
-} // namespace vp
+}

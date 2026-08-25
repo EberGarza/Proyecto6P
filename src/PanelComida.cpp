@@ -12,7 +12,7 @@ namespace {
 constexpr float kAltoFila = 34.f;
 constexpr float kHueco    = 6.f;
 
-} // namespace sin nombre
+}
 
 PanelComida::PanelComida(const sf::Font& fuente, sf::Vector2f tamanoVentana)
     : fuente_(fuente)
@@ -57,7 +57,6 @@ void PanelComida::refrescar(const Inventario& inventario, AlElegir alElegir)
         botones_.back().establecerTamanoTexto(tema::kTextoChico);
         botones_.back().establecerTecla(std::to_string(tecla++));
 
-        // A la derecha, lo que alimenta y cuantas raciones quedan.
         std::string texto = objeto->detalle();
         if (!objeto->esInfinito())
             texto += "   x" + std::to_string(objeto->usosRestantes());
@@ -71,8 +70,7 @@ void PanelComida::refrescar(const Inventario& inventario, AlElegir alElegir)
 
     if (botones_.empty())
     {
-        // Sin comida no hay nada que elegir: se dice, en vez de dejar el panel
-        // vacio y que parezca que esta roto.
+
         detalles_.emplace_back(fuente_, "No queda nada en la despensa.", tema::kTextoNormal);
         detalles_.back().setFillColor(tema::kMedio);
         detalles_.back().setPosition({ origen_.x + 20.f, origen_.y + 56.f });
@@ -100,8 +98,6 @@ bool PanelComida::procesarClic(sf::Vector2f punto)
         }
     }
 
-    // Un clic fuera del panel lo cierra; dentro, se lo traga para que no llegue
-    // a la botonera que hay debajo.
     if (!panel_.cara.getGlobalBounds().contains(punto)) cerrar();
     return true;
 }
@@ -133,4 +129,4 @@ void PanelComida::draw(sf::RenderTarget& objetivo, sf::RenderStates estados) con
     objetivo.draw(aviso_, estados);
 }
 
-} // namespace vp
+}

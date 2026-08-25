@@ -9,8 +9,6 @@
 namespace vp {
 namespace {
 
-/// Nombre de relleno de la vista previa, mientras el jugador no escriba uno.
-/// No se guarda en la partida: solo sirve para que la descripcion se lea bien.
 const char* kNombrePrevio = "Tu mascota";
 
 constexpr float kAnchoBoton = 140.f;
@@ -18,7 +16,7 @@ constexpr float kAltoBoton  = 44.f;
 constexpr float kHueco      = 10.f;
 constexpr float kYBotones   = 122.f;
 
-} // namespace sin nombre
+}
 
 PantallaSeleccion::PantallaSeleccion(const sf::Font& fuente, sf::Vector2f tamanoVentana)
     : fuente_(fuente)
@@ -36,13 +34,10 @@ PantallaSeleccion::PantallaSeleccion(const sf::Font& fuente, sf::Vector2f tamano
              "Enter: comenzar   |   ESC: volver",
              tema::kTextoChico)
 {
-    // No basta con que el archivo exista: una partida de una especie que ya no
-    // esta en el juego no se puede cargar, y el boton se quedaria sin hacer
-    // nada al pulsarlo. Se intenta cargar aqui y se descarta el resultado.
+
     hayPartida_ = GestorGuardado::existePartida(GestorGuardado::rutaPorDefecto())
                && GestorGuardado::cargar(GestorGuardado::rutaPorDefecto()) != nullptr;
 
-    // El nombre arranca vacio: lo pone el jugador, no el juego.
     nombre_.clear();
 
     construirInterfaz();
@@ -51,8 +46,7 @@ PantallaSeleccion::PantallaSeleccion(const sf::Font& fuente, sf::Vector2f tamano
 
 void PantallaSeleccion::centrar(sf::Text& texto, float y) const
 {
-    // En SFML 3 getLocalBounds() devuelve position y size en vez de
-    // left/top/width/height.
+
     const sf::FloatRect limites = texto.getLocalBounds();
     texto.setOrigin({ limites.position.x + limites.size.x * 0.5f, limites.position.y });
     texto.setPosition({ tamanoVentana_.x * 0.5f, y });
@@ -71,13 +65,10 @@ void PantallaSeleccion::construirInterfaz()
     centrar(titulo_,    30.f);
     centrar(subtitulo_, 74.f);
 
-    // --- Dos grupos de botones, uno a cada lado del centro -------------------
-    // Especie a la izquierda, genero a la derecha. Cada grupo son dos botones,
-    // asi que los dos ocupan lo mismo y quedan simetricos.
     const auto tipos = FabricaMascotas::tiposDisponibles();
 
     const float anchoGrupo = 2.f * kAnchoBoton + kHueco;
-    const float separacion = 100.f;                   // pasillo entre los grupos
+    const float separacion = 100.f;
     const float xEspecies  = tamanoVentana_.x * 0.5f - separacion * 0.5f - anchoGrupo;
     const float xGeneros   = tamanoVentana_.x * 0.5f + separacion * 0.5f;
 
@@ -106,7 +97,6 @@ void PantallaSeleccion::construirInterfaz()
         x += kAnchoBoton + kHueco;
     }
 
-    // --- Recuadro donde se ve la mascota elegida -----------------------------
     const sf::Vector2f tamanoPanel(320.f, 206.f);
     panelPrevio_.setSize(tamanoPanel);
     panelPrevio_.setPosition({ (tamanoVentana_.x - tamanoPanel.x) * 0.5f, 186.f });
@@ -114,10 +104,9 @@ void PantallaSeleccion::construirInterfaz()
     panelPrevio_.setOutlineThickness(1.f);
     panelPrevio_.setOutlineColor(tema::kPanelBorde);
 
-    vista_.establecerEscala(3.f);   // entero, igual que en la partida
+    vista_.establecerEscala(3.f);
     vista_.establecerPosicion({ tamanoVentana_.x * 0.5f, 186.f + tamanoPanel.y * 0.55f });
 
-    // --- Campo de texto del nombre ------------------------------------------
     const sf::Vector2f tamanoCampo(320.f, 46.f);
     campoNombre_.setSize(tamanoCampo);
     campoNombre_.setPosition({ (tamanoVentana_.x - tamanoCampo.x) * 0.5f, 470.f });
@@ -127,7 +116,6 @@ void PantallaSeleccion::construirInterfaz()
 
     etiquetaNombre_.setPosition({ campoNombre_.getPosition().x, 450.f });
 
-    // --- Comenzar y continuar ------------------------------------------------
     const sf::Vector2f tamanoAccion(200.f, 48.f);
     indiceComenzar_ = botones_.size();
     botones_.emplace_back(fuente_, "Comenzar",
@@ -147,8 +135,6 @@ void PantallaSeleccion::construirInterfaz()
     centrar(ayuda_, tamanoVentana_.y - 34.f);
     refrescarComenzar();
 }
-
-// --------------------------------------------------------------- Acciones ---
 
 std::string PantallaSeleccion::nombreParaMostrar() const
 {
@@ -175,7 +161,6 @@ void PantallaSeleccion::refrescarPrevia()
     vista_.prepararMascota(*mascota_);
     descripcion_.setString(mascota_->descripcion());
 
-    // La descripcion se parte en dos lineas si no cabe en el ancho del panel.
     if (descripcion_.getLocalBounds().size.x > tamanoVentana_.x - 200.f)
     {
         std::string texto = mascota_->descripcion();
@@ -185,7 +170,6 @@ void PantallaSeleccion::refrescarPrevia()
     }
     centrar(descripcion_, 404.f);
 
-    // Se resalta el boton elegido de cada grupo.
     const auto tipos = FabricaMascotas::tiposDisponibles();
     for (std::size_t i = 0; i < tipos.size(); ++i)
         botones_[inicioEspecies_ + i].establecerActivo(tipos[i] == tipoElegido_);
@@ -196,8 +180,7 @@ void PantallaSeleccion::refrescarPrevia()
 
 void PantallaSeleccion::refrescarComenzar()
 {
-    // Sin nombre no se empieza: es mas claro apagar el boton que dejar que se
-    // pulse y poner uno por defecto a espaldas del jugador.
+
     botones_[indiceComenzar_].establecerHabilitado(!nombre_.empty());
 }
 
@@ -205,10 +188,6 @@ void PantallaSeleccion::confirmar()
 {
     if (nombre_.empty()) return;
 
-    // La mascota de la vista previa se ha ido creando y renombrando mientras
-    // el jugador probaba especies, asi que su bitacora arrastra mensajes con
-    // el nombre de relleno. La que se entrega a la partida es nueva, con el
-    // nombre definitivo desde el principio.
     auto definitiva = FabricaMascotas::crear(tipoElegido_, generoElegido_, nombre_);
     if (!definitiva) return;
 
@@ -227,11 +206,11 @@ void PantallaSeleccion::continuarPartida()
 
 void PantallaSeleccion::escribir(char32_t caracter)
 {
-    if (caracter == 8)                       // retroceso
+    if (caracter == 8)
     {
         if (!nombre_.empty()) nombre_.pop_back();
     }
-    else if (caracter == 13 || caracter == 10)   // Enter
+    else if (caracter == 13 || caracter == 10)
     {
         confirmar();
         return;
@@ -255,8 +234,6 @@ std::unique_ptr<Mascota> PantallaSeleccion::tomarMascota()
     return std::move(mascota_);
 }
 
-// ---------------------------------------------------------------- Eventos ---
-
 void PantallaSeleccion::manejarEvento(const sf::Event& evento)
 {
     if (evento.is<sf::Event::Closed>())
@@ -273,8 +250,7 @@ void PantallaSeleccion::manejarEvento(const sf::Event& evento)
 
     if (const auto* tecla = evento.getIf<sf::Event::KeyPressed>())
     {
-        // Las flechas no generan TextEntered, asi que se pueden usar para
-        // navegar sin estorbar a quien esta escribiendo el nombre.
+
         using Tecla = sf::Keyboard::Key;
         const auto tipos = FabricaMascotas::tiposDisponibles();
 
@@ -323,8 +299,6 @@ void PantallaSeleccion::manejarEvento(const sf::Event& evento)
     }
 }
 
-// ----------------------------------------------------------- Actualizacion --
-
 void PantallaSeleccion::actualizar(float dt)
 {
     relojCursor_ += dt;
@@ -332,8 +306,6 @@ void PantallaSeleccion::actualizar(float dt)
 
     const bool cursorVisible = relojCursor_ < 0.5f;
 
-    // Con el campo vacio se muestra una pista en gris, no un nombre puesto por
-    // el juego: asi queda claro que hay que escribir algo.
     if (nombre_.empty())
     {
         textoNombre_.setString(std::string(cursorVisible ? "|" : " ") + " escribe aqui");
@@ -352,8 +324,6 @@ void PantallaSeleccion::actualizar(float dt)
 
     if (mascota_) vista_.actualizar(*mascota_, dt);
 }
-
-// --------------------------------------------------------------- Dibujado ---
 
 void PantallaSeleccion::dibujar(sf::RenderTarget& objetivo) const
 {
@@ -376,4 +346,4 @@ void PantallaSeleccion::dibujar(sf::RenderTarget& objetivo) const
     objetivo.draw(ayuda_);
 }
 
-} // namespace vp
+}

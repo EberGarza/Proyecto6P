@@ -56,4 +56,4 @@ bool estadoDesdeNombre(const std::string& nombre, TipoEstado& destino)
     return false;
 }
 
-} // namespace vp
+}

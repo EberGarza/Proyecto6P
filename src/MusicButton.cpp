@@ -6,7 +6,7 @@ bool MusicButton::cargar(const std::string& ruta, sf::Vector2f posicion, float e
 {
     if (!textura_.loadFromFile(ruta)) return false;
 
-    textura_.setSmooth(true);   // el icono no es pixel art: aqui si conviene suavizar
+    textura_.setSmooth(true);
 
     sprite_.emplace(textura_);
     sprite_->setScale({ escala, escala });
@@ -25,7 +25,6 @@ void MusicButton::establecerActivo(bool activo)
     activo_ = activo;
     if (!sprite_) return;
 
-    // Apagado se dibuja translucido, sin necesidad de un segundo icono.
     sprite_->setColor(activo_ ? sf::Color(255, 255, 255, 255)
                               : sf::Color(255, 255, 255, 70));
 }
@@ -35,4 +34,4 @@ void MusicButton::draw(sf::RenderTarget& objetivo, sf::RenderStates estados) con
     if (sprite_) objetivo.draw(*sprite_, estados);
 }
 
-} // namespace vp
+}

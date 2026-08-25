@@ -9,8 +9,7 @@ Music::~Music()
 
 bool Music::load(const std::string& archivo)
 {
-    // SFML 3 mantiene openFromFile: la pista se lee en streaming, no se carga
-    // entera en memoria como haria loadFromFile en un sonido corto.
+
     cargada_ = musica_.openFromFile(archivo);
     return cargada_;
 }
@@ -32,7 +31,7 @@ void Music::stop()
 
 void Music::setLoop(bool repetir)
 {
-    // SFML 3 renombro setLoop a setLooping.
+
     if (cargada_) musica_.setLooping(repetir);
 }
 
@@ -46,4 +45,4 @@ bool Music::isPlaying() const
     return cargada_ && musica_.getStatus() == sf::SoundSource::Status::Playing;
 }
 
-} // namespace vp
+}

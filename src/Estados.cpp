@@ -5,8 +5,6 @@
 
 namespace vp {
 
-// ---------------------------------------------------------------- Normal ---
-
 void EstadoNormal::alEntrar(Mascota& mascota)
 {
     mascota.registrar(mascota.nombre() + " esta tranquil" + mascota.terminacion() + ".");
@@ -29,8 +27,6 @@ std::string EstadoNormal::mensaje() const
     return "Todo tranquilo por aqui.";
 }
 
-// ----------------------------------------------------------------- Feliz ---
-
 void EstadoFeliz::alEntrar(Mascota& mascota)
 {
     mascota.registrar(mascota.nombre() + " esta feliz. " + mascota.sonido());
@@ -44,8 +40,6 @@ void EstadoFeliz::actualizar(Mascota& mascota, float)
         return;
     }
 
-    // Sale de Feliz con un umbral mas bajo del que necesito para entrar.
-    // Esta histeresis evita que el estado parpadee entre Normal y Feliz.
     if (mascota.felicidad().porDebajoDe(kUmbralFelicidad - 20.f))
         mascota.cambiarEstado(TipoEstado::Normal);
 }
@@ -54,8 +48,6 @@ std::string EstadoFeliz::mensaje() const
 {
     return "Esta dando saltos de alegria.";
 }
-
-// ------------------------------------------------------------ Hambrienta ---
 
 void EstadoHambrienta::alEntrar(Mascota& mascota)
 {
@@ -71,7 +63,6 @@ void EstadoHambrienta::actualizar(Mascota& mascota, float dt)
         return;
     }
 
-    // El hambre prolongada desgasta el animo.
     mascota.felicidad().modificar(-0.12f * dt);
 
     if (mascota.salud().porDebajoDe(kUmbralEnfermedad))
@@ -89,8 +80,6 @@ std::string EstadoHambrienta::mensaje() const
     return "Le ruge el estomago...";
 }
 
-// --------------------------------------------------------------- Cansada ---
-
 void EstadoCansada::alEntrar(Mascota& mascota)
 {
     mascota.registrar(mascota.nombre() + " esta cansad" + mascota.terminacion() + ".");
@@ -104,7 +93,6 @@ void EstadoCansada::actualizar(Mascota& mascota, float)
         return;
     }
 
-    // Sin energia se desmaya y pasa a dormir aunque el jugador no lo pida.
     if (mascota.energia().enMinimo())
     {
         mascota.registrar(mascota.nombre() + " no aguanto mas y se desplomo.");
@@ -133,13 +121,10 @@ std::string EstadoCansada::mensaje() const
     return "Apenas puede mantener los ojos abiertos.";
 }
 
-// ------------------------------------------------------------- Durmiendo ---
-
 void EstadoDurmiendo::alEntrar(Mascota& mascota)
 {
     mascota.registrar(mascota.nombre() + " se durmio. Zzz...");
 
-    // Mientras duerme cambian las tasas: recupera energia y gasta menos.
     mascota.energia().establecerTasa(kRecuperacionEnergia);
     mascota.saciedad().establecerTasa(mascota.tasaBaseSaciedad() * 0.3f);
     mascota.higiene().establecerTasa(0.f);
@@ -153,7 +138,6 @@ void EstadoDurmiendo::actualizar(Mascota& mascota, float dt)
         return;
     }
 
-    // Dormir tambien repone un poco de salud.
     mascota.salud().modificar(0.25f * dt);
 
     if (mascota.energia().enMaximo())
@@ -171,8 +155,6 @@ std::string EstadoDurmiendo::mensaje() const
     return "Zzz... no la despiertes.";
 }
 
-// --------------------------------------------------------------- Enferma ---
-
 void EstadoEnferma::alEntrar(Mascota& mascota)
 {
     mascota.registrar(mascota.nombre() + " se enfermo. Necesita medicina.");
@@ -188,7 +170,6 @@ void EstadoEnferma::actualizar(Mascota& mascota, float dt)
 
     mascota.felicidad().modificar(-kCastigoFelicidad * dt);
 
-    // Solo se sale de aqui subiendo la salud (medicina o descanso largo).
     if (mascota.salud().porEncimaDe(kUmbralEnfermedad + 20.f))
         mascota.cambiarEstado(TipoEstado::Normal);
 }
@@ -202,8 +183,6 @@ std::string EstadoEnferma::mensaje() const
 {
     return "No se siente nada bien...";
 }
-
-// --------------------------------------------------------------- Jugando ---
 
 EstadoJugando::EstadoJugando(float duracion)
     : duracion_(duracion)
@@ -227,9 +206,6 @@ void EstadoJugando::actualizar(Mascota& mascota, float dt)
 
     restante_ -= dt;
 
-    // Jugar cuesta energia y ensucia. El animo NO se sube aqui: de eso se
-    // encarga la actividad Jugando, que lo va entregando poco a poco. Si se
-    // sumara en los dos sitios, jugar valdria el doble de lo que dice.
     mascota.energia().modificar(-1.2f * dt);
     mascota.higiene().modificar(-0.9f * dt);
 
@@ -252,11 +228,9 @@ std::string EstadoJugando::mensaje() const
     return "Esta jugando sin parar.";
 }
 
-// ---------------------------------------------------------------- Muerta ---
-
 void EstadoMuerta::alEntrar(Mascota& mascota)
 {
-    // Se congelan todos los cambios automaticos.
+
     mascota.saciedad().establecerTasa(0.f);
     mascota.felicidad().establecerTasa(0.f);
     mascota.energia().establecerTasa(0.f);
@@ -266,7 +240,7 @@ void EstadoMuerta::alEntrar(Mascota& mascota)
 
 void EstadoMuerta::actualizar(Mascota&, float)
 {
-    // Estado terminal: no hace nada y no transita a ningun otro estado.
+
 }
 
 std::string EstadoMuerta::mensaje() const
@@ -274,4 +248,4 @@ std::string EstadoMuerta::mensaje() const
     return "Ya no esta con nosotros.";
 }
 
-} // namespace vp
+}

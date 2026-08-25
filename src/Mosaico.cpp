@@ -23,9 +23,6 @@ bool componerMosaico(sf::RenderTexture& lienzo,
 
     lienzo.clear(base);
 
-    // HojaSprites no se puede copiar ni mover: cada Animacion guarda un puntero
-    // a la textura de su hoja, y al mover el objeto ese puntero se quedaria
-    // apuntando al original. Por eso van detras de unique_ptr y no por valor.
     std::vector<std::unique_ptr<HojaSprites>> cargadas;
     std::vector<sf::Sprite>                   sellos;
 
@@ -43,7 +40,7 @@ bool componerMosaico(sf::RenderTexture& lienzo,
         sello.setScale({ escala, escala });
 
         sellos.push_back(sello);
-        cargadas.push_back(std::move(hoja));   // mantiene viva la textura
+        cargadas.push_back(std::move(hoja));
     }
 
     if (!sellos.empty())
@@ -51,13 +48,13 @@ bool componerMosaico(sf::RenderTexture& lienzo,
         int fila = 0;
         for (float y = 20.f; y < tamano.y + paso; y += paso, ++fila)
         {
-            // Filas alternas desplazadas, para que no se vea una rejilla.
+
             const float desfase = (fila % 2 == 0) ? 0.f : paso / 2.f;
             int columna = 0;
 
             for (float x = 20.f + desfase; x < tamano.x + paso; x += paso, ++columna)
             {
-                // Tablero entre las hojas disponibles. Con una sola, se repite.
+
                 sf::Sprite& sello = sellos[(fila + columna) % sellos.size()];
 
                 sello.setRotation(sf::degrees(((fila + columna) % 5) * 7.f - 14.f));
@@ -71,4 +68,4 @@ bool componerMosaico(sf::RenderTexture& lienzo,
     return true;
 }
 
-} // namespace vp
+}

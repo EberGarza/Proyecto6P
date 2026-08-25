@@ -16,7 +16,7 @@ std::string enMinusculas(std::string texto)
     return texto;
 }
 
-} // namespace sin nombre
+}
 
 std::unique_ptr<Mascota> FabricaMascotas::crear(TipoMascota tipo, Genero genero,
                                                 const std::string& nombre)
@@ -55,4 +55,4 @@ std::string FabricaMascotas::nombreTipo(TipoMascota tipo)
     return "Desconocido";
 }
 
-} // namespace vp
+}

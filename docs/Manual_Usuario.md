@@ -99,18 +99,39 @@ El **último botón cambia según la especie**: el conejo puede *Saltar*, que le
 sube mucho el ánimo a cambio de energía y de ensuciarse; el castor puede
 *Roer*, que le anima y le abre el apetito.
 
-### Las acciones tardan
+### Una cosa cada vez
 
-Comer, jugar, asear y medicar **no son instantáneos**. La mascota se pone a
+Comer, jugar, asear y dormir **no son instantáneos**. La mascota se pone a
 hacerlo, la animación se repite mientras dura y la barra sube poco a poco. Un
 banquete de 60 puntos tarda el doble que una zanahoria de 30.
 
-Mientras esté ocupada no acepta otra cosa: si insistes, lo dice en la bitácora.
-Y si la barra se llena antes de terminar, para sola.
+Y mientras esté ocupada **no acepta nada más**. Si está comiendo, no puedes
+mandarla a dormir; si está jugando, no puedes bañarla. Se nota en tres sitios a
+la vez:
+
+- Los botones de lo que no se puede hacer **se apagan**.
+
+![Ocupada comiendo](../assets/images/screenshots/ocupada.png)
+
+- Encima de la botonera aparece un cartel: *"Nube esta comiendo..."*.
+- Si insistes, la bitácora te dice por qué no.
+
+Mientras duerme sólo queda una opción, y el botón lo dice: `DORMIR` pasa a ser
+`DESPERTAR`.
+
+![Durmiendo](../assets/images/screenshots/durmiendo.png)
+ Puedes despertarla, pero si lo haces antes de tiempo se enfada y
+pierde ánimo.
+
+Si la barra se llena antes de terminar, la mascota para sola.
 
 ### La despensa
 
 ![Despensa](../assets/images/screenshots/despensa.png)
+
+Todos los botones tienen su animación: la mascota come, se baña, se toma el
+jarabe, se deja acariciar y hace su gracia propia (el conejo salta, el castor
+roe un tronco).
 
 Al pulsar **Alimentar** se abre la despensa, con lo que queda y lo que alimenta
 cada cosa. Se elige con el ratón o con las teclas `1` a `4`:
@@ -148,9 +169,6 @@ pantalla.
 
 Cuando hay varias necesidades a la vez, mandan por este orden: **muerte,
 enfermedad, hambre, cansancio**.
-
-Mientras duerme **no acepta interacciones**. Puedes despertarla, pero si lo
-haces antes de tiempo se enfada y pierde ánimo.
 
 ## Guardar la partida
 

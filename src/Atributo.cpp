@@ -54,4 +54,4 @@ bool Atributo::enMaximo() const                { return valor_ >= maximo_; }
 bool Atributo::porDebajoDe(float umbral) const { return valor_ < umbral; }
 bool Atributo::porEncimaDe(float umbral) const { return valor_ > umbral; }
 
-} // namespace vp
+}

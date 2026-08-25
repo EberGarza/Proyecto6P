@@ -9,21 +9,21 @@
 #                                y aun considerarse fondo
 #    escala <f>                  aumento propio de la hoja
 #
-#    animacion <Estado> <segundos_por_cuadro> [bucle]
+#    animacion <Nombre> <segundos_por_cuadro> [bucle]
 #    tinte <r> <g> <b> [Estado]  color por el que se multiplica el sprite
 #    cuadro <x> <y> <w> <h> [ox] [oy]
 #
-#  A diferencia de la hoja antigua (assets/images/beta/), esta esta dibujada
-#  sobre una REJILLA EXACTA de 64x64: 4 columnas por 9 filas. Eso cambia como
-#  se ancla el sprite. Antes el anclaje iba sobre la cara, medido pose a pose,
-#  porque los recortes no estaban alineados. Aqui el anclaje es el mismo para
-#  todos los cuadros (32, 28) y va sobre la CELDA, no sobre el dibujo.
+#  <Nombre> puede ser un ESTADO (Normal, Feliz, Hambrienta, Cansada,
+#  Durmiendo, Enferma, Jugando, Muerta) o una ACCION (Comer, Aseo, Curar,
+#  Acariciar, Especial). Los estados dicen como esta la mascota; las acciones,
+#  que hace, y mandan sobre el estado mientras duran.
 #
-#  Esto es a proposito: la sombra del suelo se queda quieta en todos los
-#  cuadros y el cuerpo sube y baja respecto a ella. Ese salto lo dibujo el
-#  artista dentro de la celda, y anclando por celda se conserva. Si se anclara
-#  sobre el cuerpo, el motor "corregiria" el salto y la animacion se quedaria
-#  plana.
+#  La hoja es una REJILLA EXACTA de 64x64: 4 columnas por 12 filas. El anclaje
+#  es el mismo para todos los cuadros, (32, 28), y va sobre la CELDA, no sobre
+#  el dibujo. Es a proposito: la sombra del suelo se queda quieta y el cuerpo
+#  sube y baja respecto a ella. Ese salto lo dibujo el artista dentro de la
+#  celda, y anclando por celda se conserva. Si se anclara sobre el cuerpo, el
+#  motor "corregiria" el salto y la animacion se quedaria plana.
 #
 #  Se puede editar y volver a lanzar el juego: no hace falta recompilar.
 # ============================================================================
@@ -55,18 +55,18 @@ animacion Feliz 0.18 1
   cuadro 192  64 64 64  32.0 28.0
 
 # --- Fila 2: comiendo -------------------------------------------------------
-# Es una ACCION, no un estado: se repite en bucle mientras la mascota coma y
-# para cuando la barra de saciedad se llena o se acaba el plato.
+# ACCION, no estado: se repite en bucle mientras la mascota coma y para cuando
+# la barra de saciedad se llena o se acaba el plato.
 animacion Comer 0.30 1
   cuadro   0 128 64 64  32.0 28.0
   cuadro  64 128 64 64  32.0 28.0
   cuadro 128 128 64 64  32.0 28.0
   cuadro 192 128 64 64  32.0 28.0
 
-# --- Fila 3: ceno fruncido y gota de sudor ---------------------------------
+# --- Fila 3: ceno fruncido y gota de sudor ----------------------------------
 # La hoja trae una sola pose de incomodidad, asi que Hambrienta y Cansada
 # comparten los mismos cuadros. Si algun dia hay una fila propia para el
-# hambre, basta cambiar las coordenadas de este primer bloque.
+# cansancio, basta cambiar las coordenadas del segundo bloque.
 animacion Hambrienta 0.40 1
   cuadro   0 192 64 64  32.0 28.0
   cuadro  64 192 64 64  32.0 28.0
@@ -94,18 +94,38 @@ animacion Jugando 0.20 1
   cuadro 192 320 64 64  32.0 28.0
 
 # --- Fila 6: bano, con burbujas ---------------------------------------------
-# Otra ACCION en bucle: se repite mientras dure el bano.
 animacion Aseo 0.30 1
   cuadro   0 384 64 64  32.0 28.0
   cuadro  64 384 64 64  32.0 28.0
   cuadro 128 384 64 64  32.0 28.0
   cuadro 192 384 64 64  32.0 28.0
 
-# --- Fila 7: enfermo, con mascarilla (solo 2 poses) -------------------------
-animacion Enferma 0.45 1
+# --- Fila 7: tomando la medicina --------------------------------------------
+animacion Curar 0.30 1
   cuadro   0 448 64 64  32.0 28.0
   cuadro  64 448 64 64  32.0 28.0
+  cuadro 128 448 64 64  32.0 28.0
+  cuadro 192 448 64 64  32.0 28.0
 
-# --- Fila 8: muerto, con aureola (una sola pose, sin bucle) -----------------
-animacion Muerta 1.00 0
+# --- Fila 8: acariciando ----------------------------------------------------
+animacion Acariciar 0.25 1
   cuadro   0 512 64 64  32.0 28.0
+  cuadro  64 512 64 64  32.0 28.0
+  cuadro 128 512 64 64  32.0 28.0
+  cuadro 192 512 64 64  32.0 28.0
+
+# --- Fila 9: accion propia de la especie (saltar / roer) --------------------
+animacion Especial 0.15 1
+  cuadro   0 576 64 64  32.0 28.0
+  cuadro  64 576 64 64  32.0 28.0
+  cuadro 128 576 64 64  32.0 28.0
+  cuadro 192 576 64 64  32.0 28.0
+
+# --- Fila 10: enfermo, con mascarilla (solo 2 poses) ------------------------
+animacion Enferma 0.45 1
+  cuadro   0 640 64 64  32.0 28.0
+  cuadro  64 640 64 64  32.0 28.0
+
+# --- Fila 11: muerto, con aureola (una sola pose, sin bucle) ----------------
+animacion Muerta 1.00 0
+  cuadro   0 704 64 64  32.0 28.0

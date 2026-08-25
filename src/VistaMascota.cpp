@@ -25,8 +25,7 @@ bool VistaMascota::prepararMascota(const Mascota& mascota)
     }
     else
     {
-        // Sin arte disponible se dibuja con figuras: el juego sigue siendo
-        // jugable y presentable aunque assets/images/ este vacia.
+
         render_        = std::make_unique<RenderProcedural>(fuente_);
         usandoSprites_ = false;
     }
@@ -71,4 +70,4 @@ void VistaMascota::draw(sf::RenderTarget& objetivo, sf::RenderStates estados) co
     if (render_) objetivo.draw(*render_, estados);
 }
 
-} // namespace vp
+}

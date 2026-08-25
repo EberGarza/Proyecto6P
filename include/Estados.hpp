@@ -4,7 +4,6 @@
 
 namespace vp {
 
-/// Estado por defecto: la mascota esta tranquila y sin necesidades urgentes.
 class EstadoNormal : public Estado
 {
 public:
@@ -14,7 +13,6 @@ public:
     std::string mensaje() const override;
 };
 
-/// Felicidad alta y ninguna necesidad critica.
 class EstadoFeliz : public Estado
 {
 public:
@@ -24,7 +22,6 @@ public:
     std::string mensaje() const override;
 };
 
-/// Saciedad baja: la salud empieza a resentirse hasta que se le da de comer.
 class EstadoHambrienta : public Estado
 {
 public:
@@ -34,7 +31,6 @@ public:
     std::string mensaje() const override;
 };
 
-/// Energia baja: si llega a cero, la mascota se duerme sola.
 class EstadoCansada : public Estado
 {
 public:
@@ -44,7 +40,6 @@ public:
     std::string mensaje() const override;
 };
 
-/// Recupera energia rapidamente. Bloquea las interacciones del jugador.
 class EstadoDurmiendo : public Estado
 {
 public:
@@ -56,10 +51,9 @@ public:
     bool permiteInteraccion() const override { return false; }
 
 private:
-    static constexpr float kRecuperacionEnergia = 4.0f;  ///< puntos por segundo
+    static constexpr float kRecuperacionEnergia = 4.0f;
 };
 
-/// Salud baja: solo se recupera con medicina.
 class EstadoEnferma : public Estado
 {
 public:
@@ -70,10 +64,9 @@ public:
     std::string mensaje() const override;
 
 private:
-    static constexpr float kCastigoFelicidad = 0.20f;    ///< puntos por segundo
+    static constexpr float kCastigoFelicidad = 0.20f;
 };
 
-/// Estado temporal con duracion: al terminar vuelve a Normal o Feliz.
 class EstadoJugando : public Estado
 {
 public:
@@ -92,7 +85,6 @@ private:
     float restante_;
 };
 
-/// Estado terminal: se congela todo y no se acepta ninguna interaccion.
 class EstadoMuerta : public Estado
 {
 public:
@@ -103,4 +95,4 @@ public:
     bool permiteInteraccion() const override { return false; }
 };
 
-} // namespace vp
+}

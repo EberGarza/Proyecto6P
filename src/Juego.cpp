@@ -16,14 +16,11 @@ namespace vp {
 Juego::Juego()  = default;
 Juego::~Juego() = default;
 
-// ---------------------------------------------------------- Inicializacion --
-
 bool Juego::cargarFuente()
 {
-    // Se prueba primero la fuente del proyecto y, si no esta, alguna del
-    // sistema. Asi el juego arranca aunque la carpeta assets siga vacia.
+
     static const std::array<const char*, 7> rutas {
-        "assets/fonts/VCR_OSD_MONO_1.001.ttf",   // la misma del Proyecto3P
+        "assets/fonts/VCR_OSD_MONO_1.001.ttf",
         "assets/fonts/04B_30__.TTF",
         "assets/fonts/fuente.ttf",
         "C:/Windows/Fonts/segoeui.ttf",
@@ -42,11 +39,9 @@ bool Juego::cargarFuente()
 
 bool Juego::inicializar()
 {
-    // SFML 3: VideoMode recibe un vector de tamano, no dos enteros sueltos.
+
     ventana_.create(sf::VideoMode({ kAnchoVentana, kAltoVentana }), "VirtualPet");
-    // VSync en vez de setFramerateLimit: el limitador se apoya en sleep, cuya
-    // granularidad en Windows es irregular y produce microtirones. No se deben
-    // usar los dos a la vez.
+
     ventana_.setVerticalSyncEnabled(true);
     ventana_.setKeyRepeatEnabled(true);
 
@@ -82,7 +77,7 @@ void Juego::cambiarPantalla(Pantalla::Transicion destino)
 
         case Pantalla::Transicion::Juego:
         {
-            // La pantalla de seleccion entrega la mascota que acaba de crear.
+
             auto* seleccion = dynamic_cast<PantallaSeleccion*>(pantalla_.get());
             if (!seleccion) break;
 
@@ -103,8 +98,6 @@ void Juego::cambiarPantalla(Pantalla::Transicion destino)
             break;
     }
 }
-
-// ------------------------------------------------------------ Bucle principal
 
 int Juego::ejecutar()
 {
@@ -133,8 +126,7 @@ int Juego::ejecutar()
 
 void Juego::procesarEventos()
 {
-    // SFML 3: pollEvent() devuelve un std::optional<sf::Event> en vez de
-    // rellenar un evento por referencia. Vacio significa que no queda ninguno.
+
     while (const std::optional<sf::Event> evento = ventana_.pollEvent())
     {
         if (pantalla_)                          pantalla_->manejarEvento(*evento);
@@ -167,9 +159,9 @@ void Juego::dibujar()
 
 void Juego::alCerrar()
 {
-    // Si se sale desde la partida, se guarda automaticamente.
+
     if (auto* enJuego = dynamic_cast<PantallaJuego*>(pantalla_.get()))
         enJuego->guardar();
 }
 
-} // namespace vp
+}

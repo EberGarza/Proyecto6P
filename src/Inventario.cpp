@@ -66,10 +66,6 @@ Inventario Inventario::inicial()
 {
     Inventario inv;
 
-    // Cuatro comidas con cantidades distintas: la mas floja es infinita para
-    // que nunca se pueda dejar a la mascota sin nada, y las buenas se acaban.
-    // La cantidad manda tambien en cuanto dura la animacion de comer, asi que
-    // un banquete se ve mas largo que un puñado de pienso.
     inv.agregar(std::make_unique<Alimento>("pienso",       3, 15.f, -1));
     inv.agregar(std::make_unique<Alimento>("una zanahoria", 6, 30.f,  6));
     inv.agregar(std::make_unique<Alimento>("corteza",       6, 30.f,  6));
@@ -85,4 +81,4 @@ Inventario Inventario::inicial()
     return inv;
 }
 
-} // namespace vp
+}

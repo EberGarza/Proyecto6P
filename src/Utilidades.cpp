@@ -1,6 +1,7 @@
 #include "Utilidades.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <cstdio>
 #include <random>
@@ -10,15 +11,13 @@ namespace vp {
 namespace util {
 namespace {
 
-// Generador de numeros aleatorios compartido por todo el programa.
-// Se construye una sola vez, la primera vez que alguien lo pide.
 std::mt19937& motor()
 {
     static std::mt19937 generador(std::random_device{}());
     return generador;
 }
 
-} // namespace sin nombre
+}
 
 float limitar(float valor, float minimo, float maximo)
 {
@@ -61,5 +60,12 @@ std::string aTexto(float valor)
     return std::to_string(static_cast<int>(std::lround(valor)));
 }
 
-} // namespace util
-} // namespace vp
+std::string aMinusculas(std::string texto)
+{
+    for (char& c : texto)
+        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    return texto;
+}
+
+}
+}

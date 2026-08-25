@@ -11,7 +11,7 @@ constexpr float kAltoSalud   = 20.f;
 constexpr float kAltoMenor   = 14.f;
 constexpr float kHuecoMenor  = 14.f;
 
-} // namespace sin nombre
+}
 
 Hud::Hud(const sf::Font& fuente, sf::Vector2f tamanoVentana, float alturaTira)
     : tamanoVentana_(tamanoVentana)
@@ -24,23 +24,17 @@ Hud::Hud(const sf::Font& fuente, sf::Vector2f tamanoVentana, float alturaTira)
 
     tira_ = tema::panelBiselado({ 0.f, 0.f }, { tamanoVentana_.x, alturaTira });
 
-    // --- Chapa con el nombre, arriba a la izquierda ---
     chapaNombre_ = tema::panelBiselado({ kMargen, 8.f }, { 320.f, 30.f },
                                        tema::kPanelBorde);
 
     nombre_.setFillColor(tema::kAcento);
     nombre_.setPosition({ kMargen + 10.f, 8.f });
 
-    // La especie y la edad van a la derecha de la chapa, en la misma fila: si
-    // se ponen debajo chocan con la etiqueta de la barra de SALUD.
     especie_.setFillColor(tema::kTextoSuave);
     especie_.setPosition({ kMargen + 340.f, 18.f });
 
-    // --- Estado, a la derecha, como el marcador de asalto ---
     estado_.setFillColor(tema::kTexto);
 
-    // --- Barras ---
-    // Una grande de SALUD que cruza la pantalla, y cuatro menores debajo.
     barras_.reserve(5);
     barras_.emplace_back(fuente, "SALUD", sf::Vector2f{ kMargen, 62.f },
                          sf::Vector2f{ ancho, kAltoSalud });
@@ -55,7 +49,6 @@ Hud::Hud(const sf::Font& fuente, sf::Vector2f tamanoVentana, float alturaTira)
                              sf::Vector2f{ anchoMenor, kAltoMenor });
     }
 
-    // --- Teletipo de la bitacora, abajo del escenario ---
     const float altoTeletipo = 74.f;
     fondoBitacora_.setSize({ 340.f, altoTeletipo });
     fondoBitacora_.setPosition({ kMargen, tamanoVentana_.y - 118.f - altoTeletipo - 6.f });
@@ -78,13 +71,11 @@ void Hud::actualizar(const Mascota& mascota, float dt)
     nombre_.setString(mascota.nombre());
     especie_.setString(mascota.especie() + "   " + util::formatearTiempo(mascota.edad()));
 
-    // El estado va a la derecha del todo, alineado por su borde derecho.
     estado_.setString(mascota.estado().nombre());
     estado_.setFillColor(mascota.estaViva() ? tema::kAcento : tema::kMal);
     sf::FloatRect limites = estado_.getLocalBounds();
     estado_.setPosition({ tamanoVentana_.x - kMargen - limites.size.x - 10.f, 8.f });
 
-    // Bitacora: de lo mas reciente hacia atras.
     const auto& registro = mascota.bitacora();
     std::string texto;
     std::size_t mostradas = 0;
@@ -113,4 +104,4 @@ void Hud::draw(sf::RenderTarget& objetivo, sf::RenderStates estados) const
     objetivo.draw(bitacora_, estados);
 }
 
-} // namespace vp
+}

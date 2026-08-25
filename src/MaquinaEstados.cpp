@@ -55,7 +55,7 @@ void MaquinaEstados::cambiarA(Mascota& mascota, TipoEstado nuevo)
 {
     if (actualizando_)
     {
-        // Diferido: el estado actual todavia esta ejecutandose.
+
         pendiente_ = nuevo;
         return;
     }
@@ -90,4 +90,4 @@ TipoEstado MaquinaEstados::tipoActual() const
 TipoEstado MaquinaEstados::tipoAnterior() const   { return anterior_; }
 float      MaquinaEstados::tiempoEnEstado() const { return tiempoEnEstado_; }
 
-} // namespace vp
+}

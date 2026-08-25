@@ -11,18 +11,6 @@ namespace vp {
 
 class Mascota;
 
-/**
- * @brief Marcador superior, al estilo de un juego de pelea de recreativa.
- *
- * La distribucion imita la de esos marcadores: arriba del todo la chapa con el
- * nombre a la izquierda y el estado a la derecha; debajo una barra de SALUD
- * ancha que cruza la pantalla, y bajo ella cuatro medidores secundarios en
- * fila. Es la misma informacion que antes, pero ordenada por importancia en
- * vez de en una lista.
- *
- * La bitacora queda como un teletipo translucido en la parte baja, para no
- * robarle sitio a la mascota.
- */
 class Hud : public sf::Drawable
 {
 public:
@@ -30,7 +18,6 @@ public:
 
     void actualizar(const Mascota& mascota, float dt);
 
-    /// Alto que ocupa la tira superior, para que la pantalla coloque el resto.
     static constexpr float kAlturaTira = 132.f;
 
 private:
@@ -48,10 +35,9 @@ private:
 
     sf::RectangleShape fondoBitacora_;
 
-    /// Orden fijo: salud, saciedad, felicidad, energia, higiene.
     std::vector<BarraAtributo> barras_;
 
     static constexpr std::size_t kLineasBitacora = 4;
 };
 
-} // namespace vp
+}

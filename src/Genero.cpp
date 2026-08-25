@@ -13,7 +13,7 @@ std::string enMinusculas(std::string texto)
     return texto;
 }
 
-} // namespace sin nombre
+}
 
 std::string nombreGenero(Genero genero)
 {
@@ -35,4 +35,4 @@ bool generoDesdeNombre(const std::string& texto, Genero& destino)
     return false;
 }
 
-} // namespace vp
+}

@@ -21,12 +21,6 @@
 
 namespace vp {
 
-/**
- * @brief Pantalla principal: la mascota, sus barras y los botones de accion.
- *
- * Contiene la mascota mientras dura la partida y tambien el
- * Admin_Menu, que se activa tecleando la secuencia secreta.
- */
 class PantallaJuego : public Pantalla
 {
 public:
@@ -38,7 +32,6 @@ public:
     void actualizar(float dt) override;
     void dibujar(sf::RenderTarget& objetivo) const override;
 
-    /// Guarda la partida (lo llama Juego al cerrar la ventana).
     bool guardar() const;
 
     const Mascota* mascota() const { return mascota_.get(); }
@@ -51,11 +44,13 @@ private:
     void actualizarMetrica();
     void anunciar(const std::string& texto, sf::Color color);
 
-    /// Abre la cartelera de comida con lo que quede en el inventario.
     void abrirDespensa();
 
-    /// Usa el primer objeto disponible de una categoria ("Juguete", "Aseo"...).
     void usarPrimero(const std::string& categoria);
+
+    void intentarAccion(AccionMascota accion);
+
+    void refrescarBotonera();
 
     const sf::Font&              fuente_;
     std::unique_ptr<Mascota>     mascota_;
@@ -69,7 +64,12 @@ private:
     PanelAdmin                   panelAdmin_;
     PanelComida                  panelComida_;
 
-    // --- Metrica de actividad, que enciende el Admin_Menu -------------------
+    std::vector<AccionMascota>   accionDeBoton_;
+
+    tema::PanelBiselado          panelOcupada_;
+    sf::Text                     textoOcupada_;
+    bool                         mostrarOcupada_ = false;
+
     tema::PanelBiselado          panelMetrica_;
     sf::Text                     tituloMetrica_;
     sf::Text                     textoMetrica_;
@@ -78,17 +78,14 @@ private:
     sf::Vector2f                 origenProgreso_ { 0.f, 0.f };
     float                        anchoProgreso_  = 0.f;
 
-    /// Fondo del escenario: la mascota repetida en mosaico, compuesta una vez.
     sf::RenderTexture            lienzoEscenario_;
     std::optional<sf::Sprite>    escenario_;
 
-    /// Rejilla de lineas horizontales que imita el barrido de un monitor CRT.
     sf::VertexArray              barrido_;
 
     tema::PanelBiselado          panelBotonera_;
     sf::Text                     pie_;
 
-    /// Cartel grande en mitad del escenario cuando la mascota cambia de estado.
     sf::Text                     anuncio_;
     float                        anuncioRestante_ = 0.f;
     TipoEstado                   estadoAnunciado_ = TipoEstado::Normal;
@@ -99,4 +96,4 @@ private:
     float                        fps_ = 0.f;
 };
 
-} // namespace vp
+}

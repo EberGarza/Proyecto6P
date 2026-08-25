@@ -18,7 +18,7 @@ state Feliz {
 
 state Hambrienta {
   Hambrienta : saciedad < 20
-  Hambrienta : do / felicidad -= 0.8/s
+  Hambrienta : do / felicidad -= 0.12/s
 }
 
 state Cansada {
@@ -26,19 +26,21 @@ state Cansada {
 }
 
 state Durmiendo {
-  Durmiendo : entrada / energia +8/s, higiene 0/s
+  Durmiendo : entrada / energia +4/s, higiene 0/s
+  Durmiendo : do / salud +0.25/s
   Durmiendo : salida / restaurar tasas base
   Durmiendo : no acepta interacciones
 }
 
 state Enferma {
   Enferma : salud < 30
-  Enferma : do / felicidad -= 1.5/s
+  Enferma : do / felicidad -= 0.20/s
 }
 
 state Jugando {
   Jugando : temporizador de 5 s
-  Jugando : do / felicidad +3/s, energia -2/s
+  Jugando : do / energia -1.2/s, higiene -0.9/s
+  Jugando : el animo lo sube la actividad, no el estado
 }
 
 state Muerta {
@@ -51,7 +53,7 @@ Normal      --> Feliz       : felicidad > 80
 Feliz       --> Normal      : felicidad < 60
 Normal      --> Hambrienta  : saciedad < 20
 Feliz       --> Hambrienta  : saciedad < 20
-Hambrienta  --> Normal      : alimentar() / saciedad > 40
+Hambrienta  --> Normal      : saciedad > 40
 Normal      --> Cansada     : energia < 20
 Feliz       --> Cansada     : energia < 20
 Cansada     --> Normal      : energia > 35
@@ -60,7 +62,7 @@ Cansada     --> Hambrienta  : saciedad < 20
 ' --- Sueno ---
 Normal      --> Durmiendo   : dormir()
 Feliz       --> Durmiendo   : dormir()
-Cansada     --> Durmiendo   : dormir() / energia = 0
+Cansada     --> Durmiendo   : dormir(), o solo al llegar a energia = 0
 Durmiendo   --> Normal      : despertar() o energia = 100
 
 ' --- Enfermedad ---
@@ -68,7 +70,7 @@ Normal      --> Enferma     : salud < 30
 Feliz       --> Enferma     : salud < 30
 Hambrienta  --> Enferma     : salud < 30
 Cansada     --> Enferma     : salud < 30
-Enferma     --> Normal      : medicar() / salud > 50
+Enferma     --> Normal      : salud > 50
 
 ' --- Juego ---
 Normal      --> Jugando     : jugar()
@@ -93,6 +95,20 @@ note right of Muerta
   saciedad < 15, higiene < 20 o
   felicidad < 10 (ver
   Mascota::aplicarEfectosSecundarios).
+end note
+
+note as ActividadNota
+  **Las acciones ocupan a la mascota**
+
+  Aparte del estado, la mascota puede estar
+  haciendo algo: comiendo, jugando, banandose
+  o curandose. Mientras dure, **no acepta
+  ninguna otra accion**: Mascota::puede() las
+  rechaza todas y la botonera se apaga.
+
+  Dormir y jugar son las dos que ademas
+  cambian de estado; comer y banarse ocurren
+  sin salir del estado en que este.
 end note
 
 @enduml

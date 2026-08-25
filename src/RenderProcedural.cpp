@@ -9,7 +9,6 @@
 namespace vp {
 namespace {
 
-/// Mezcla dos colores. t = 0 devuelve a, t = 1 devuelve b.
 sf::Color mezclar(sf::Color a, sf::Color b, float t)
 {
     const auto lerp = [t](std::uint8_t x, std::uint8_t y)
@@ -19,14 +18,13 @@ sf::Color mezclar(sf::Color a, sf::Color b, float t)
     return sf::Color(lerp(a.r, b.r), lerp(a.g, b.g), lerp(a.b, b.b));
 }
 
-/// Centra el origen de un circulo en su propio centro geometrico.
 void centrar(sf::CircleShape& figura, float radio)
 {
     figura.setRadius(radio);
     figura.setOrigin({ radio, radio });
 }
 
-} // namespace sin nombre
+}
 
 RenderProcedural::RenderProcedural(const sf::Font& fuente)
     : boca_(sf::PrimitiveType::LineStrip, kPuntosBoca)
@@ -63,8 +61,6 @@ RenderProcedural::RenderProcedural(const sf::Font& fuente)
     establecerEscala(1.f);
 }
 
-// ------------------------------------------------------------- Especies -----
-
 void RenderProcedural::configurarEspecie(const std::string& especie)
 {
     if (especie == especieActual_) return;
@@ -74,32 +70,27 @@ void RenderProcedural::configurarEspecie(const std::string& especie)
     {
         colorCuerpo_ = sf::Color(122, 82, 52);
         colorPanza_  = sf::Color(186, 138, 96);
-        orejaIzq_.setPointCount(24);         // orejas pequenas y redondas
+        orejaIzq_.setPointCount(24);
         orejaDer_.setPointCount(24);
     }
-    else                                      // Conejo y cualquier especie nueva
+    else
     {
         colorCuerpo_ = sf::Color(168, 172, 186);
         colorPanza_  = sf::Color(226, 230, 240);
-        orejaIzq_.setPointCount(24);         // orejas largas
+        orejaIzq_.setPointCount(24);
         orejaDer_.setPointCount(24);
     }
 
     panza_.setFillColor(colorPanza_);
     hocico_.setFillColor(mezclar(colorPanza_, sf::Color::Black, 0.25f));
 
-    // El color del cuerpo se calcula en aplicarEstado(), asi que hay que
-    // recalcularlo: si no, al cambiar de especie se quedaria el color viejo.
     aplicarEstado(estado_);
 }
-
-// -------------------------------------------------------------- Estados -----
 
 void RenderProcedural::aplicarEstado(TipoEstado tipo)
 {
     estado_ = tipo;
 
-    // Valores por defecto que luego ajusta cada caso.
     tinteEstado_   = sf::Color::White;
     aperturaOjos_  = 1.f;
     curvaturaBoca_ = 0.35f;
@@ -151,7 +142,7 @@ void RenderProcedural::aplicarEstado(TipoEstado tipo)
             curvaturaBoca_ = -1.0f;
             aperturaOjos_  = 0.55f;
             velocidadBote_ = 1.1f;
-            tinteEstado_   = sf::Color(196, 226, 186);   // verdoso
+            tinteEstado_   = sf::Color(196, 226, 186);
             efecto_.setString("+");
             efecto_.setFillColor(tema::kBien);
             break;
@@ -169,7 +160,7 @@ void RenderProcedural::aplicarEstado(TipoEstado tipo)
             aperturaOjos_  = 0.f;
             velocidadBote_ = 0.f;
             alturaBote_    = 0.f;
-            tinteEstado_   = sf::Color(120, 120, 130);   // gris
+            tinteEstado_   = sf::Color(120, 120, 130);
             efecto_.setString("R.I.P.");
             efecto_.setFillColor(tema::kTextoTenue);
             break;
@@ -181,8 +172,6 @@ void RenderProcedural::aplicarEstado(TipoEstado tipo)
     cola_.setFillColor(orejaIzq_.getFillColor());
 }
 
-// ---------------------------------------------------------- Actualizacion ---
-
 void RenderProcedural::actualizar(const Mascota& mascota, float dt)
 {
     tiempo_ += dt;
@@ -192,14 +181,12 @@ void RenderProcedural::actualizar(const Mascota& mascota, float dt)
     if (mascota.tipoEstado() != estado_)
         aplicarEstado(mascota.tipoEstado());
 
-    // Parpadeo: cada pocos segundos los ojos se cierran un instante.
     if (estado_ != TipoEstado::Durmiendo && estado_ != TipoEstado::Muerta)
     {
         relojParpadeo_ += dt;
         if (relojParpadeo_ > 3.2f) relojParpadeo_ = 0.f;
     }
 
-    // La cola se mueve mas rapido cuanto mas feliz esta la mascota.
     giroCola_ = std::sin(tiempo_ * (2.f + mascota.felicidad().porcentaje() * 8.f)) * 22.f;
 
     const float rebote = std::sin(tiempo_ * velocidadBote_) * alturaBote_;
@@ -223,13 +210,10 @@ void RenderProcedural::reposicionar(float desplazamientoY)
     ojoIzq_.setPosition(centroOjoIzq);
     ojoDer_.setPosition(centroOjoDer);
 
-    // Las pupilas miran ligeramente de lado, siguiendo el vaiven del cuerpo.
     const float mirada = std::sin(tiempo_ * 0.8f) * 4.f * e;
     pupilaIzq_.setPosition({ centroOjoIzq.x + mirada, centroOjoIzq.y + 2.f * e });
     pupilaDer_.setPosition({ centroOjoDer.x + mirada, centroOjoDer.y + 2.f * e });
 
-    // Parpado: un rectangulo del color del cuerpo que baja sobre el ojo.
-    // Se combina la apertura del estado con el parpadeo automatico.
     const bool  parpadeando = relojParpadeo_ > 3.05f;
     const float apertura    = parpadeando ? 0.f : aperturaOjos_;
     const float altoParpado = kRadioOjo * 2.f * e * (1.f - apertura);
@@ -248,8 +232,7 @@ void RenderProcedural::reposicionar(float desplazamientoY)
     cola_.setSize({ 46.f * e, 12.f * e });
     cola_.setOrigin({ 0.f, 6.f * e });
     cola_.setPosition({ c.x + 52.f * e, c.y + 26.f * e });
-    // SFML 3 usa el tipo sf::Angle en vez de un float suelto, para que no haya
-    // duda de si son grados o radianes.
+
     cola_.setRotation(sf::degrees(giroCola_));
 
     construirBoca({ c.x, c.y + 30.f * e }, curvaturaBoca_);
@@ -266,7 +249,7 @@ void RenderProcedural::construirBoca(sf::Vector2f centro, float curvatura)
 
     for (int i = 0; i < kPuntosBoca; ++i)
     {
-        // t va de -1 a 1; la parabola 1 - t^2 da la curva de la sonrisa.
+
         const float t = -1.f + 2.f * static_cast<float>(i) / (kPuntosBoca - 1);
         const float x = centro.x + t * ancho * 0.5f;
         const float y = centro.y - (1.f - t * t) * altura;
@@ -275,8 +258,6 @@ void RenderProcedural::construirBoca(sf::Vector2f centro, float curvatura)
         boca_[static_cast<std::size_t>(i)].color    = color;
     }
 }
-
-// ------------------------------------------------------ Posicion y escala ---
 
 void RenderProcedural::establecerPosicion(sf::Vector2f posicion)
 {
@@ -301,11 +282,9 @@ void RenderProcedural::establecerEscala(float escala)
     reposicionar(0.f);
 }
 
-// --------------------------------------------------------------- Dibujado ---
-
 void RenderProcedural::draw(sf::RenderTarget& objetivo, sf::RenderStates estados) const
 {
-    // El orden importa: de atras hacia adelante.
+
     objetivo.draw(cola_,       estados);
     objetivo.draw(orejaIzq_,   estados);
     objetivo.draw(orejaDer_,   estados);
@@ -322,4 +301,4 @@ void RenderProcedural::draw(sf::RenderTarget& objetivo, sf::RenderStates estados
     objetivo.draw(efecto_,     estados);
 }
 
-} // namespace vp
+}

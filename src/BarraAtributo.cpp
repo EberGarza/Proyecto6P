@@ -9,10 +9,10 @@ namespace vp {
 namespace {
 
 constexpr float kAnchoMuesca = 2.f;
-constexpr float kPasoMuesca  = 26.f;   ///< separacion entre muescas
-constexpr float kCaidaRastro = 0.55f;  ///< fraccion de barra por segundo
+constexpr float kPasoMuesca  = 26.f;
+constexpr float kCaidaRastro = 0.55f;
 
-} // namespace sin nombre
+}
 
 BarraAtributo::BarraAtributo(const sf::Font& fuente, std::string etiqueta,
                              sf::Vector2f posicion, sf::Vector2f tamano)
@@ -34,7 +34,6 @@ BarraAtributo::BarraAtributo(const sf::Font& fuente, std::string etiqueta,
                                  { tamano_.x - 4.f, tamano_.y - 4.f });
     hueco_.setFillColor(tema::kBarraFondo);
 
-    // Las muescas se calculan una sola vez: no dependen del nivel.
     for (float x = kPasoMuesca; x < tamano_.x - 4.f; x += kPasoMuesca)
     {
         sf::ConvexShape muesca = tema::paralelogramo(
@@ -52,8 +51,6 @@ void BarraAtributo::establecerPosicion(sf::Vector2f posicion)
     posicion_ = posicion;
     rehacerFormas();
 
-    // La etiqueta va encima de la barra, en pequeno, como el nombre del
-    // luchador sobre su barra de vida.
     texto_.setPosition({ posicion_.x + tema::kSesgo, posicion_.y - 18.f });
 
     const sf::FloatRect limites = valor_.getLocalBounds();
@@ -85,8 +82,6 @@ void BarraAtributo::actualizar(const Atributo& atributo, float dt)
 {
     nivel_ = atributo.porcentaje();
 
-    // El rastro solo baja, y despacio. Si el valor sube, lo alcanza de golpe:
-    // subir no necesita dramatismo, bajar si.
     if (rastro_ > nivel_) rastro_ = std::max(nivel_, rastro_ - kCaidaRastro * dt);
     else                  rastro_ = nivel_;
 
@@ -100,7 +95,6 @@ void BarraAtributo::actualizar(const Atributo& atributo, float dt)
                                    { util * nivel_, tamano_.y - 4.f });
     relleno_.setFillColor(tema::segunNivel(nivel_));
 
-    // Una franja clara en la mitad superior simula el reflejo del cristal.
     brillo_ = tema::paralelogramo({ posicion_.x + 2.f, posicion_.y + 2.f },
                                   { util * nivel_, (tamano_.y - 4.f) * 0.4f });
     brillo_.setFillColor(tema::kBarraBrillo);
@@ -115,7 +109,7 @@ void BarraAtributo::draw(sf::RenderTarget& objetivo, sf::RenderStates estados) c
 {
     objetivo.draw(marco_,   estados);
     objetivo.draw(hueco_,   estados);
-    objetivo.draw(estela_,  estados);   // el rastro va detras del relleno
+    objetivo.draw(estela_,  estados);
     objetivo.draw(relleno_, estados);
     objetivo.draw(brillo_,  estados);
 
@@ -126,4 +120,4 @@ void BarraAtributo::draw(sf::RenderTarget& objetivo, sf::RenderStates estados) c
     tema::dibujarConSombra(objetivo, valor_);
 }
 
-} // namespace vp
+}

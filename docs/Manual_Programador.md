@@ -194,8 +194,32 @@ Van **en bucle**, y quien decide cuándo paran es la actividad de la mascota:
 mientras esté comiendo, la animación de comer se repite. Ver
 [Actividades](#actividades-las-acciones-llevan-su-tiempo).
 
-Si una hoja no trae la animación de una acción, el render se queda con la del
-estado y la acción funciona igual, sólo que sin dibujo propio.
+Hoy hay cinco: `Comer`, `Aseo`, `Curar`, `Acariciar` y `Especial` (la acción
+propia de cada especie). Si una hoja no trae alguna, el render se queda con la
+del estado y la acción funciona igual, sólo que sin dibujo propio.
+
+### Cuando el dibujo no cabe en su celda
+
+Las hojas del conejo traen el salto de `Especial` dibujado **5 px por encima**
+de su celda: las puntas de las orejas caen en la fila de arriba, la de
+`Acariciar`. Recortando por la rejilla, el salto pierde las orejas y los mimos
+ganan dos manchas.
+
+No hizo falta redibujar nada, porque `cuadro` acepta cualquier rectángulo, no
+sólo los de la rejilla:
+
+```
+animacion Especial 0.15 1
+  cuadro   0 576 64 64  32.0 28.0
+  cuadro  64 568 64 64  32.0 36.0   <- sube 8, y el anclaje baja 8
+  cuadro 128 568 64 64  32.0 36.0
+  cuadro 192 576 64 64  32.0 28.0
+```
+
+Subir el recorte 8 px y bajar el anclaje otros 8 deja el sprite **en el mismo
+sitio de la pantalla** y recupera las orejas. Y a `Acariciar` se le recorta el
+alto a 56 px para dejar fuera lo que no es suyo. Los castores no lo necesitan:
+su salto cabe entero.
 
 ### Por qué se ve nítido
 
@@ -268,6 +292,86 @@ Eso da tres cosas gratis:
 Dormir es la excepcion: no tiene cuenta atras, asi que sigue siendo un estado.
 `actividad()` lo declara como `Durmiendo` de todas formas, porque para quien
 mira la pantalla es lo mismo.
+
+**Acariciar y la acción de especie también son actividades**, aunque duren menos
+de un segundo y su efecto sea pequeño. No se hizo por el efecto sino por la
+animación: una acción instantánea no tiene dónde animarse. Al convertirlas,
+`saltar()` y `roer()` pagan su coste de golpe (energía, suciedad) y entregan el
+ánimo poco a poco mientras dura el salto.
+
+Las dos comparten `Mascota::iniciarAccionEspecial()`, que vive en la clase base
+en vez de repetirse en cada especie: lo único que cambia entre conejo y castor
+son los números; el permiso, la animación y el bloqueo son los mismos.
+
+Un detalle de redacción que costó un intento: el nombre de la actividad aparece
+en dos frases, `"Actividad: X"` en la telemetría y `"<nombre> esta x..."` en el
+cartel. Por eso son gerundios y no sustantivos — con `"Mimos"` salía
+*"Nube esta mimos..."*.
+
+### Una cosa cada vez
+
+La revisión señaló que el juego era **lineal**: una fila de botones que se
+pulsaban cuando fuera, sin que el estado de la mascota importase. Comer mientras
+dormía, dormir a media comida, saltar mientras se bañaba.
+
+La causa era que cada acción llevaba sus propias comprobaciones. `alimentar()`
+miraba si estaba ocupada; `dormir()` no. Con siete acciones y ocho estados, que
+todas se acuerden de todas las reglas no es una cuestión de disciplina: es
+cuestión de tiempo hasta que una se olvide.
+
+Ahora hay **un solo sitio** donde se decide:
+
+```cpp
+Permiso Mascota::puede(AccionMascota accion) const;
+```
+
+Devuelve si se puede **y el motivo si no**. Lleva el motivo dentro a propósito:
+si sólo devolviera un `bool`, cada sitio que pregunta tendría que inventarse su
+propia explicación, y acabarían diciendo cosas distintas para el mismo caso.
+
+El orden de las reglas es el que se lee de arriba abajo:
+
+1. **Muerta** → nada.
+2. **Durmiendo** → sólo despertar. Va antes que lo demás porque dormir es un
+   estado, no una actividad con cuenta atrás, y la única salida es despertarla.
+3. **Ocupada** → nada. Ésta es la regla que faltaba.
+4. **No lo necesita** → llena, impecable, sana, sin energía para jugar.
+
+Y `ocupada()` mira la actividad **y** el estado:
+
+```cpp
+bool Mascota::ocupada() const { return actividad() != Actividad::Ninguna; }
+```
+
+Eso importa porque el estado `Jugando` dura un poco más que la actividad del
+mismo nombre. Sin mirar el estado, había una ventana de segundo y medio en la
+que la mascota seguía jugando en pantalla pero ya aceptaba órdenes.
+
+### Lo mismo por dentro y por fuera
+
+`puede()` lo usan dos sitios, y ahí está la gracia:
+
+- **Las acciones**, para rechazar y anotar el motivo en la bitácora.
+- **La interfaz**, para apagar los botones de lo que no se puede hacer.
+
+Al salir la respuesta del mismo sitio, lo que se ve y lo que ocurre no pueden
+discrepar. Si un botón está encendido, la acción funciona; si está apagado, no.
+
+Eso obligó a separar dos cosas que en `Boton` eran una:
+
+| | Qué es | Responde al clic |
+|--|--------|------------------|
+| `establecerHabilitado(false)` | desconectado del todo (la mascota murió) | no |
+| `establecerDisponible(false)` | no se puede **ahora mismo** | **sí** |
+
+Un botón no disponible se ve apagado pero **sigue respondiendo**. Si no
+respondiera, pulsarlo no haría nada y el jugador no sabría por qué; respondiendo,
+recibe la explicación en la bitácora. Encima de la botonera hay además un cartel
+con lo que está haciendo, para que el apagón general se entienda de un vistazo.
+
+Ratón y teclado pasan por `PantallaJuego::intentarAccion()`, el mismo punto.
+Antes eran dos caminos distintos hasta las acciones y no tenían por qué
+comportarse igual.
 
 ### Como lo dibuja el render
 

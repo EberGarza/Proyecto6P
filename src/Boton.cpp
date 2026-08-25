@@ -16,13 +16,11 @@ Boton::Boton(const sf::Font& fuente, std::string etiqueta,
     forma_.setOutlineThickness(2.f);
     forma_.setOutlineColor(tema::kPanelBorde);
 
-    // Bisel: un filo claro arriba y otro a la izquierda, como una tecla fisica.
     filoSuperior_.setSize({ tamano.x, 2.f });
     filoSuperior_.setPosition(posicion);
     filoIzquierdo_.setSize({ 2.f, tamano.y });
     filoIzquierdo_.setPosition(posicion);
 
-    // Cuadrito con el numero de tecla, arriba a la izquierda del boton.
     marcaTecla_.setSize({ 18.f, 16.f });
     marcaTecla_.setPosition({ posicion.x + 4.f, posicion.y + 4.f });
     marcaTecla_.setFillColor(tema::kPanelBorde);
@@ -52,13 +50,13 @@ void Boton::centrarTexto()
 
     const sf::Vector2f p = forma_.getPosition();
     const sf::Vector2f t = forma_.getSize();
-    // Un poco por debajo del centro, para dejar sitio al numero de tecla.
+
     texto_.setPosition({ p.x + t.x * 0.5f, p.y + t.y * 0.5f + 6.f });
 }
 
 void Boton::actualizar(sf::Vector2f posicionRaton)
 {
-    resaltado_ = habilitado_ && contiene(posicionRaton);
+    resaltado_ = habilitado_ && disponible_ && contiene(posicionRaton);
     refrescarColor();
 }
 
@@ -83,6 +81,20 @@ void Boton::establecerHabilitado(bool habilitado)
     refrescarColor();
 }
 
+void Boton::establecerDisponible(bool disponible)
+{
+    disponible_ = disponible;
+    refrescarColor();
+}
+
+void Boton::establecerEtiqueta(const std::string& etiqueta)
+{
+    if (texto_.getString() == etiqueta) return;
+
+    texto_.setString(etiqueta);
+    centrarTexto();
+}
+
 void Boton::establecerColores(sf::Color base, sf::Color resaltado)
 {
     colorBase_      = base;
@@ -104,7 +116,8 @@ void Boton::establecerTamanoTexto(unsigned tamano)
 
 void Boton::refrescarColor()
 {
-    if (!habilitado_)
+
+    if (!habilitado_ || !disponible_)
     {
         forma_.setFillColor(tema::kBotonApagado);
         forma_.setOutlineColor(tema::kPanelBorde);
@@ -119,8 +132,6 @@ void Boton::refrescarColor()
     tecla_.setFillColor(tema::kAcento);
     forma_.setFillColor(resaltado_ ? colorResaltado_ : colorBase_);
 
-    // Al resaltar se enciende el borde en amarillo, como el boton pulsado de
-    // una recreativa.
     forma_.setOutlineColor((resaltado_ || activo_) ? tema::kAcento : tema::kPanelBorde);
 
     filoSuperior_.setFillColor(tema::kBiselClaro);
@@ -147,4 +158,4 @@ void Boton::draw(sf::RenderTarget& objetivo, sf::RenderStates estados) const
     tema::dibujarConSombra(objetivo, texto_);
 }
 
-} // namespace vp
+}

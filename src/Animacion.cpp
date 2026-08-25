@@ -80,4 +80,4 @@ void Animacion::reiniciar()
     terminada_       = false;
 }
 
-} // namespace vp
+}

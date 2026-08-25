@@ -4,7 +4,6 @@
 
 namespace vp {
 
-/// Comida: sube la saciedad. Si es la favorita de la especie, sube mas el animo.
 class Alimento : public Objeto
 {
 public:
@@ -22,7 +21,6 @@ private:
     float nutricion_;
 };
 
-/// Juguete: sube la felicidad a cambio de energia.
 class Juguete : public Objeto
 {
 public:
@@ -40,7 +38,6 @@ private:
     float diversion_;
 };
 
-/// Medicina: sube la salud. Solo tiene sentido si la mascota esta enferma.
 class Medicina : public Objeto
 {
 public:
@@ -58,7 +55,6 @@ private:
     float curacion_;
 };
 
-/// Articulo de aseo: sube la higiene.
 class ArticuloAseo : public Objeto
 {
 public:
@@ -76,4 +72,4 @@ private:
     float limpieza_;
 };
 
-} // namespace vp
+}

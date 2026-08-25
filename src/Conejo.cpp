@@ -12,20 +12,16 @@ Conejo::Conejo(std::string nombre, Genero genero)
 
 void Conejo::configurarRasgos()
 {
-    // Puntos por segundo. La saciedad tarda unos 9 minutos en vaciarse
-    // desde llena: el juego es de cuidar, no de vigilar.
-    //                  saciedad  felicidad  energia  higiene
+
     establecerTasasBase(-0.18f,   -0.13f,    -0.11f,  -0.11f);
 
-    felicidad().establecer(90.f);   // arranca de buen humor
+    felicidad().establecer(90.f);
     energia().establecer(100.f);
 }
 
 std::string Conejo::descripcion() const
 {
-    // El genero gramatical va con el sustantivo, no con el sexo del animal, y
-    // no todas las especies forman el femenino igual. Por eso cada especie
-    // escribe su propia frase en vez de pegarle un articulo a "conejo".
+
     const std::string quien = (genero() == Genero::Macho) ? "un conejo" : "una coneja";
 
     return nombre() + " es " + quien + ". Come sin parar y se ensucia "
@@ -34,20 +30,14 @@ std::string Conejo::descripcion() const
 
 bool Conejo::saltar()
 {
-    if (!estaViva())                    return false;
-    if (!estado().permiteInteraccion()) return false;
-
-    if (energia().porDebajoDe(20.f))
-    {
-        registrar(nombre() + " intenta saltar y se queda a medio brinco.");
-        return false;
-    }
+    const Permiso permiso = puede(AccionMascota::Especial);
+    if (!permiso) { registrar(permiso.motivo); return false; }
 
     energia().modificar(-14.f);
-    felicidad().modificar(20.f);
-    higiene().modificar(-6.f);       // levanta polvo
-    registrar(nombre() + " sale disparado dando brincos. " + sonido());
-    return true;
+    higiene().modificar(-6.f);
+
+    return iniciarAccionEspecial(20.f, 0.9f,
+                                 nombre() + " sale disparado dando brincos. " + sonido());
 }
 
 void Conejo::alCambiarEstado(TipoEstado, TipoEstado nuevo)
@@ -60,4 +50,4 @@ void Conejo::alCambiarEstado(TipoEstado, TipoEstado nuevo)
         registrar(nombre() + " mordisquea el aire buscando comida.");
 }
 
-} // namespace vp
+}

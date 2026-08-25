@@ -18,13 +18,10 @@ Mascota::Mascota(std::string nombre, Genero genero)
     , higiene_  ("Higiene",   100.f)
     , salud_    ("Salud",     100.f)
 {
-    // Valores neutros por defecto; cada especie los sobreescribe en su
-    // constructor llamando a configurarRasgos().
+
     establecerTasasBase(-0.14f, -0.10f, -0.10f, -0.09f);
     maquina_.iniciar(*this, TipoEstado::Normal);
 }
-
-// ----------------------------------------------------------- Ciclo de vida --
 
 void Mascota::actualizar(float dt)
 {
@@ -37,10 +34,7 @@ void Mascota::actualizar(float dt)
     felicidad_.actualizar(dt);
     energia_.actualizar(dt);
     higiene_.actualizar(dt);
-    // La salud no decae sola: depende del resto de atributos.
 
-    // La actividad va antes que los efectos cruzados: si la mascota esta
-    // comiendo, lo justo es que la saciedad de este fotograma cuente ya.
     avanzarActividad(dt);
 
     aplicarEfectosSecundarios(dt);
@@ -58,11 +52,10 @@ void Mascota::aplicarEfectosSecundarios(float dt)
 {
     float cambioSalud = 0.f;
 
-    if (saciedad_.porDebajoDe(15.f))  cambioSalud -= 0.25f;   // desnutricion
-    if (higiene_.porDebajoDe(20.f))   cambioSalud -= 0.18f;   // infecciones
-    if (felicidad_.porDebajoDe(10.f)) cambioSalud -= 0.10f;   // depresion
+    if (saciedad_.porDebajoDe(15.f))  cambioSalud -= 0.25f;
+    if (higiene_.porDebajoDe(20.f))   cambioSalud -= 0.18f;
+    if (felicidad_.porDebajoDe(10.f)) cambioSalud -= 0.10f;
 
-    // Si todo esta bien, la mascota se recupera poco a poco.
     const bool bienCuidada = saciedad_.porEncimaDe(60.f) &&
                              higiene_.porEncimaDe(60.f) &&
                              energia_.porEncimaDe(40.f);
@@ -71,14 +64,75 @@ void Mascota::aplicarEfectosSecundarios(float dt)
     salud_.modificar(cambioSalud * dt);
 }
 
-// ------------------------------------------------------------ Actividad -----
-
 Actividad Mascota::actividad() const
 {
-    // Dormir no es una actividad con cuenta atras sino un estado, pero para
-    // quien mira la pantalla es lo mismo: la mascota esta durmiendo.
+
     if (tipoEstado() == TipoEstado::Durmiendo) return Actividad::Durmiendo;
+    if (tipoEstado() == TipoEstado::Jugando)   return Actividad::Jugando;
     return actividadEnCurso_;
+}
+
+bool Mascota::ocupada() const
+{
+    return actividad() != Actividad::Ninguna;
+}
+
+Permiso Mascota::puede(AccionMascota accion) const
+{
+    const std::string ella = pronombre();
+
+    if (!viva_)
+        return { false, nombre_ + " ya no esta." };
+
+    if (tipoEstado() == TipoEstado::Durmiendo)
+    {
+        if (accion == AccionMascota::Despertar) return { true, {} };
+        return { false, nombre_ + " esta durmiendo. Despierta" + ella + " primero." };
+    }
+
+    if (accion == AccionMascota::Despertar)
+        return { false, nombre_ + " ya esta despiert" + terminacion() + "." };
+
+    if (ocupada())
+    {
+        const std::string haciendo = util::aMinusculas(nombreActividad(actividad()));
+        return { false, nombre_ + " esta " + haciendo + ". Espera a que termine." };
+    }
+
+    switch (accion)
+    {
+        case AccionMascota::Alimentar:
+            if (saciedad_.enMaximo())
+                return { false, nombre_ + " ya esta llen" + terminacion() + ", no quiere mas." };
+            break;
+
+        case AccionMascota::Asear:
+            if (higiene_.enMaximo())
+                return { false, nombre_ + " ya esta impecable." };
+            break;
+
+        case AccionMascota::Medicar:
+            if (salud_.enMaximo())
+                return { false, nombre_ + " esta san" + terminacion() + ", no necesita medicina." };
+            break;
+
+        case AccionMascota::Jugar:
+            if (energia_.porDebajoDe(15.f))
+                return { false, nombre_ + " esta demasiado cansad" + terminacion() + " para jugar." };
+            break;
+
+        case AccionMascota::Especial:
+            if (energia_.porDebajoDe(20.f))
+                return { false, nombre_ + " no tiene energia para eso." };
+            break;
+
+        case AccionMascota::Dormir:
+        case AccionMascota::Acariciar:
+        case AccionMascota::Despertar:
+            break;
+    }
+
+    return { true, {} };
 }
 
 float Mascota::progresoActividad() const
@@ -91,10 +145,12 @@ Atributo* Mascota::atributoDeActividad()
 {
     switch (actividadEnCurso_)
     {
-        case Actividad::Comiendo:  return &saciedad_;
-        case Actividad::Jugando:   return &felicidad_;
-        case Actividad::Aseandose: return &higiene_;
-        case Actividad::Curandose: return &salud_;
+        case Actividad::Comiendo:    return &saciedad_;
+        case Actividad::Jugando:     return &felicidad_;
+        case Actividad::Aseandose:   return &higiene_;
+        case Actividad::Curandose:   return &salud_;
+        case Actividad::Acariciando: return &felicidad_;
+        case Actividad::Presumiendo: return &felicidad_;
 
         case Actividad::Durmiendo:
         case Actividad::Ninguna:
@@ -124,8 +180,6 @@ void Mascota::avanzarActividad(float dt)
     Atributo* destino = atributoDeActividad();
     if (!destino) { cancelarActividad(); return; }
 
-    // Si la barra ya esta llena no tiene sentido seguir: se corta y se avisa,
-    // en vez de dejar la animacion repitiendose sin efecto.
     if (destino->enMaximo())
     {
         const Actividad terminada = actividadEnCurso_;
@@ -142,7 +196,6 @@ void Mascota::avanzarActividad(float dt)
 
     if (restanteActividad_ > 0.f) return;
 
-    // --- Terminada: efectos secundarios y mensaje de cierre ------------------
     const Actividad terminada = actividadEnCurso_;
     const std::string queEra  = objetoActividad_;
     actividadEnCurso_ = Actividad::Ninguna;
@@ -152,28 +205,42 @@ void Mascota::avanzarActividad(float dt)
     {
         case Actividad::Comiendo:
             felicidad_.modificar(totalActividad_ * 0.15f);
-            higiene_.modificar(-totalActividad_ * 0.10f);   // comer ensucia
+            higiene_.modificar(-totalActividad_ * 0.10f);
             registrar(nombre_ + " termino de comer " + queEra + ". " + sonido());
             break;
 
         case Actividad::Aseandose:
-            felicidad_.modificar(-totalActividad_ * 0.10f);  // el bano no le encanta
+            felicidad_.modificar(-totalActividad_ * 0.10f);
             registrar(nombre_ + " quedo limpi" + terminacion() + ".");
             break;
 
         case Actividad::Curandose:
-            felicidad_.modificar(-totalActividad_ * 0.20f);  // la medicina sabe feo
+            felicidad_.modificar(-totalActividad_ * 0.20f);
             registrar(nombre_ + " se tomo " + queEra + ".");
             break;
 
+        case Actividad::Acariciando:
+            registrar(nombre_ + " se queda pidiendo mas mimos.");
+            break;
+
+        case Actividad::Presumiendo:
+
+            break;
+
         case Actividad::Jugando:
-            // El estado Jugando se encarga del resto y del mensaje de salida.
+
             break;
 
         case Actividad::Durmiendo:
         case Actividad::Ninguna:
             break;
     }
+}
+
+bool Mascota::iniciarAccionEspecial(float animo, float segundos,
+                                    const std::string& mensaje)
+{
+    return iniciarActividad(Actividad::Presumiendo, animo, segundos, mensaje);
 }
 
 void Mascota::cancelarActividad()
@@ -184,29 +251,11 @@ void Mascota::cancelarActividad()
     objetoActividad_.clear();
 }
 
-// ------------------------------------------------------------- Acciones -----
-
 bool Mascota::alimentar(float cantidad, const std::string& queCome)
 {
-    if (!viva_) return false;
-    if (!estado().permiteInteraccion())
-    {
-        registrar(nombre_ + " no puede comer ahora mismo.");
-        return false;
-    }
-    if (ocupada())
-    {
-        registrar(nombre_ + " esta ocupad" + terminacion() + " todavia.");
-        return false;
-    }
-    if (saciedad_.enMaximo())
-    {
-        registrar(nombre_ + " ya esta llen" + terminacion() + ", no quiere mas.");
-        return false;
-    }
+    const Permiso permiso = puede(AccionMascota::Alimentar);
+    if (!permiso) { registrar(permiso.motivo); return false; }
 
-    // Un bocado por segundo, mas o menos: comer 40 puntos lleva unos 5 s. Asi
-    // la animacion de comer se ve y la barra sube a la vista.
     objetoActividad_ = queCome;
     return iniciarActividad(Actividad::Comiendo, cantidad, cantidad / 8.f,
                             nombre_ + " se puso a comer " + queCome + ".");
@@ -214,25 +263,9 @@ bool Mascota::alimentar(float cantidad, const std::string& queCome)
 
 bool Mascota::jugar(float intensidad, const std::string& conQue)
 {
-    if (!viva_) return false;
-    if (!estado().permiteInteraccion())
-    {
-        registrar(nombre_ + " no esta para juegos ahora.");
-        return false;
-    }
-    if (ocupada())
-    {
-        registrar(nombre_ + " esta ocupad" + terminacion() + " todavia.");
-        return false;
-    }
-    if (energia_.porDebajoDe(15.f))
-    {
-        registrar(nombre_ + " esta demasiado cansad" + terminacion() + " para jugar.");
-        return false;
-    }
+    const Permiso permiso = puede(AccionMascota::Jugar);
+    if (!permiso) { registrar(permiso.motivo); return false; }
 
-    // Jugar tiene ademas su propio estado, que es el que aplica el desgaste de
-    // energia mientras dura. La actividad solo lleva la cuenta del animo.
     objetoActividad_ = conQue;
     iniciarActividad(Actividad::Jugando, intensidad, intensidad / 6.f, "");
     cambiarEstado(TipoEstado::Jugando);
@@ -241,22 +274,8 @@ bool Mascota::jugar(float intensidad, const std::string& conQue)
 
 bool Mascota::asear(float cantidad, const std::string& conQue)
 {
-    if (!viva_) return false;
-    if (!estado().permiteInteraccion())
-    {
-        registrar("Mejor no banar" + pronombre() + " mientras duerme.");
-        return false;
-    }
-    if (ocupada())
-    {
-        registrar(nombre_ + " esta ocupad" + terminacion() + " todavia.");
-        return false;
-    }
-    if (higiene_.enMaximo())
-    {
-        registrar(nombre_ + " ya esta impecable.");
-        return false;
-    }
+    const Permiso permiso = puede(AccionMascota::Asear);
+    if (!permiso) { registrar(permiso.motivo); return false; }
 
     objetoActividad_ = conQue;
     const std::string con = conQue.empty() ? "" : " con " + conQue;
@@ -266,17 +285,8 @@ bool Mascota::asear(float cantidad, const std::string& conQue)
 
 bool Mascota::medicar(float cantidad, const std::string& conQue)
 {
-    if (!viva_) return false;
-    if (ocupada())
-    {
-        registrar(nombre_ + " esta ocupad" + terminacion() + " todavia.");
-        return false;
-    }
-    if (salud_.enMaximo())
-    {
-        registrar(nombre_ + " esta san" + terminacion() + ", no necesita medicina.");
-        return false;
-    }
+    const Permiso permiso = puede(AccionMascota::Medicar);
+    if (!permiso) { registrar(permiso.motivo); return false; }
 
     objetoActividad_ = conQue;
     return iniciarActividad(Actividad::Curandose, cantidad, cantidad / 15.f,
@@ -285,29 +295,18 @@ bool Mascota::medicar(float cantidad, const std::string& conQue)
 
 bool Mascota::dormir()
 {
-    if (!viva_) return false;
-    if (tipoEstado() == TipoEstado::Durmiendo)
-    {
-        registrar(nombre_ + " ya esta dormid" + terminacion() + ".");
-        return false;
-    }
+    const Permiso permiso = puede(AccionMascota::Dormir);
+    if (!permiso) { registrar(permiso.motivo); return false; }
 
-    // Dormirse interrumpe lo que estuviera haciendo.
-    cancelarActividad();
     cambiarEstado(TipoEstado::Durmiendo);
     return true;
 }
 
 bool Mascota::despertar()
 {
-    if (!viva_) return false;
-    if (tipoEstado() != TipoEstado::Durmiendo)
-    {
-        registrar(nombre_ + " ya esta despiert" + terminacion() + ".");
-        return false;
-    }
+    const Permiso permiso = puede(AccionMascota::Despertar);
+    if (!permiso) { registrar(permiso.motivo); return false; }
 
-    // Despertarla antes de tiempo le molesta.
     if (!energia_.enMaximo())
     {
         felicidad_.modificar(-8.f);
@@ -320,12 +319,11 @@ bool Mascota::despertar()
 
 bool Mascota::acariciar()
 {
-    if (!viva_) return false;
-    if (!estado().permiteInteraccion()) return false;
+    const Permiso permiso = puede(AccionMascota::Acariciar);
+    if (!permiso) { registrar(permiso.motivo); return false; }
 
-    felicidad_.modificar(5.f);
-    registrar("Acariciaste a " + nombre_ + ". " + sonido());
-    return true;
+    return iniciarActividad(Actividad::Acariciando, 8.f, 0.9f,
+                            "Acariciaste a " + nombre_ + ". " + sonido());
 }
 
 void Mascota::revivir(float saludInicial)
@@ -334,13 +332,9 @@ void Mascota::revivir(float saludInicial)
     salud_.establecer(saludInicial <= 0.f ? 1.f : saludInicial);
     restaurarTasasBase();
 
-    // Muerta es un estado terminal, asi que cambiarEstado() ignoraria la
-    // peticion: hay que pedirle el cambio directamente a la maquina.
     maquina_.cambiarA(*this, TipoEstado::Normal);
     registrar(nombre_ + " volvio a la vida.");
 }
-
-// ------------------------------------------------------------ Consultas -----
 
 int Mascota::edadEnDias() const
 {
@@ -377,8 +371,6 @@ std::string Mascota::claveArte() const
     return clave + "_" + sufijoGenero(genero_);
 }
 
-// -------------------------------------------------------------- Estados -----
-
 const Estado& Mascota::estado() const   { return maquina_.estadoActual(); }
 TipoEstado    Mascota::tipoEstado() const { return maquina_.tipoActual(); }
 
@@ -387,7 +379,7 @@ void Mascota::cambiarEstado(TipoEstado nuevo)
     const TipoEstado anterior = maquina_.tipoActual();
 
     if (anterior == nuevo) return;
-    if (anterior == TipoEstado::Muerta) return;   // estado terminal
+    if (anterior == TipoEstado::Muerta) return;
 
     maquina_.cambiarA(*this, nuevo);
     alCambiarEstado(anterior, nuevo);
@@ -395,10 +387,8 @@ void Mascota::cambiarEstado(TipoEstado nuevo)
 
 void Mascota::alCambiarEstado(TipoEstado, TipoEstado)
 {
-    // Gancho vacio: las especies concretas pueden reaccionar aqui.
-}
 
-// ------------------------------------------------------------- Bitacora -----
+}
 
 void Mascota::registrar(const std::string& mensaje)
 {
@@ -411,8 +401,6 @@ std::string Mascota::ultimoEvento() const
 {
     return bitacora_.empty() ? std::string() : bitacora_.back();
 }
-
-// ----------------------------------------------------------- Tasas base -----
 
 void Mascota::establecerTasasBase(float saciedad, float felicidad,
                                   float energia, float higiene)
@@ -432,4 +420,4 @@ void Mascota::restaurarTasasBase()
     higiene_.establecerTasa(tasaBaseHigiene_);
 }
 
-} // namespace vp
+}

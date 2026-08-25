@@ -12,7 +12,6 @@
 namespace vp {
 namespace {
 
-/// Lee un archivo clave=valor y lo devuelve como diccionario.
 std::map<std::string, std::string> leerCampos(std::istream& entrada)
 {
     std::map<std::string, std::string> campos;
@@ -20,7 +19,7 @@ std::map<std::string, std::string> leerCampos(std::istream& entrada)
 
     while (std::getline(entrada, linea))
     {
-        // Tolera archivos guardados en Windows (terminados en CR LF).
+
         if (!linea.empty() && linea.back() == '\r') linea.pop_back();
         if (linea.empty() || linea.front() == '#') continue;
 
@@ -59,7 +58,7 @@ std::string aTextoCampo(const std::map<std::string, std::string>& campos,
     return it == campos.end() ? porDefecto : it->second;
 }
 
-} // namespace sin nombre
+}
 
 bool GestorGuardado::guardar(const Mascota& mascota, const std::string& ruta)
 {
@@ -93,9 +92,6 @@ std::unique_ptr<Mascota> GestorGuardado::cargar(const std::string& ruta)
     const std::string nombre  = aTextoCampo(campos, "nombre",  "Sin nombre");
     if (especie.empty()) return nullptr;
 
-    // Las partidas anteriores al genero no traen el campo. Se asume macho en
-    // vez de rechazar el archivo: perder una partida por un campo que no
-    // existia cuando se guardo seria peor que empezar con el sprite ajeno.
     Genero genero = Genero::Macho;
     generoDesdeNombre(aTextoCampo(campos, "genero", "Macho"), genero);
 
@@ -114,7 +110,6 @@ std::unique_ptr<Mascota> GestorGuardado::cargar(const std::string& ruta)
     if (estadoGuardado >= 0 && estadoGuardado < static_cast<int>(estados.size()))
         mascota->cambiarEstado(estados[static_cast<std::size_t>(estadoGuardado)]);
 
-    // Un tick de cero segundos sincroniza banderas derivadas, como estaViva().
     mascota->actualizar(0.f);
 
     return mascota;
@@ -122,9 +117,7 @@ std::unique_ptr<Mascota> GestorGuardado::cargar(const std::string& ruta)
 
 bool GestorGuardado::existePartida(const std::string& ruta)
 {
-    // std::filesystem::exists es la pregunta exacta que queremos hacer. Abrir
-    // el archivo con un ifstream y mirar good() responde "se pudo abrir", que
-    // no es lo mismo: depende de permisos y de bloqueos de otros procesos.
+
     std::error_code error;
     return std::filesystem::exists(ruta, error) && !error;
 }
@@ -134,4 +127,4 @@ std::string GestorGuardado::rutaPorDefecto()
     return "partida.txt";
 }
 
-} // namespace vp
+}

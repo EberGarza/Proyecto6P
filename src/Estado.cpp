@@ -26,4 +26,4 @@ std::optional<TipoEstado> Estado::transicionCritica(const Mascota& mascota)
     return std::nullopt;
 }
 
-} // namespace vp
+}

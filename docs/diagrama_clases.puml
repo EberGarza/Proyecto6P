@@ -33,10 +33,10 @@ package "nucleo (logica pura, sin SFML)" {
     - viva_ : bool
     - bitacora_ : deque<string>
     + actualizar(dt : float)
-    + alimentar(cantidad : float) : bool
-    + jugar(intensidad : float) : bool
-    + asear(cantidad : float) : bool
-    + medicar(cantidad : float) : bool
+    + alimentar(cantidad : float, queCome : string) : bool
+    + jugar(intensidad : float, conQue : string) : bool
+    + asear(cantidad : float, conQue : string) : bool
+    + medicar(cantidad : float, conQue : string) : bool
     + dormir() : bool
     + despertar() : bool
     + acariciar() : bool
@@ -44,10 +44,13 @@ package "nucleo (logica pura, sin SFML)" {
     + registrar(mensaje : string)
     + genero() : Genero
     + claveArte() : string
+    + puede(a : AccionMascota) : Permiso
     + actividad() : Actividad
     + ocupada() : bool
     + progresoActividad() : float
+    + cancelarActividad()
     - avanzarActividad(dt : float)
+    # iniciarAccionEspecial(animo, segundos, mensaje) : bool
     + {abstract} especie() : string
     + {abstract} sonido() : string
     + {abstract} comidaFavorita() : string
@@ -72,6 +75,22 @@ package "nucleo (logica pura, sin SFML)" {
 
   enum TipoMascota { Conejo, Castor }
   enum Genero { Macho, Hembra }
+  enum AccionMascota {
+    Alimentar
+    Jugar
+    Asear
+    Medicar
+    Dormir
+    Despertar
+    Acariciar
+    Especial
+  }
+
+  class Permiso <<struct>> {
+    + concedido : bool
+    + motivo : string
+  }
+
   enum Actividad {
     Ninguna
     Comiendo
@@ -264,8 +283,15 @@ package "grafico (capa SFML)" {
     - mascota_ : unique_ptr<Mascota>
     - inventario_ : Inventario
     - admin_ : AdminMenu
+    - accionDeBoton_ : vector<AccionMascota>
+    - mostrarOcupada_ : bool
     + guardar() : bool
     - crearBotones()
+    - intentarAccion(a : AccionMascota)
+    - refrescarBotonera()
+    - abrirDespensa()
+    - usarPrimero(categoria : string)
+    - actualizarMetrica()
   }
 
   abstract class RenderMascota {
@@ -311,7 +337,7 @@ package "grafico (capa SFML)" {
     - render_ : unique_ptr<RenderMascota>
     - usandoSprites_ : bool
     + prepararMascota(m : Mascota) : bool
-    + reproducirAccion(nombre : string)
+    + actualizar(m : Mascota, dt : float)
     + forzarProcedural()
   }
 
@@ -349,12 +375,19 @@ package "grafico (capa SFML)" {
 
   class Boton {
     - accion_ : function<void()>
+    - habilitado_ : bool
+    - disponible_ : bool
     + procesarClic(punto : Vector2f) : bool
+    + accionar() : bool
+    + establecerHabilitado(b : bool)
+    + establecerDisponible(b : bool)
+    + establecerEtiqueta(t : string)
   }
 
   class Hud {
     - barras_ : vector<BarraAtributo>
-    + actualizar(m : Mascota)
+    - anuncio_ : sf::Text
+    + actualizar(m : Mascota, dt : float)
   }
 
   class Tema <<namespace>> {
@@ -369,6 +402,9 @@ Mascota <|-- Castor
 
 Mascota ..> Genero : macho o hembra
 Mascota ..> Actividad : que esta haciendo
+Mascota ..> AccionMascota : que se le puede pedir
+Mascota ..> Permiso : responde con
+PantallaJuego ..> Permiso : apaga los botones
 Mascota "1" *-- "5" Atributo : posee
 Mascota "1" *-- "1" MaquinaEstados : posee
 

@@ -9,8 +9,6 @@
 
 namespace vp {
 
-// ----------------------------------------------------------------- Acceso ---
-
 bool AdminMenu::registrarTecla(char tecla)
 {
     if (desbloqueado_) return false;
@@ -33,8 +31,6 @@ bool AdminMenu::registrarTecla(char tecla)
         return false;
     }
 
-    // Si falla, se reinicia; pero si la tecla coincide con la primera letra,
-    // esa pulsacion ya cuenta como inicio de un intento nuevo.
     avanceClave_ = (pulsada == kSecuencia[0]) ? 1u : 0u;
     return false;
 }
@@ -68,11 +64,9 @@ void AdminMenu::bloquear()
     anotar("Admin_Menu bloqueado.");
 }
 
-// ------------------------------------------------ Comandos sobre la mascota -
-
 void AdminMenu::forzarEstado(Mascota& mascota, TipoEstado tipo)
 {
-    // Muerta es terminal: para salir de ahi hay que revivir primero.
+
     if (mascota.tipoEstado() == TipoEstado::Muerta && tipo != TipoEstado::Muerta)
         mascota.revivir();
 
@@ -102,7 +96,7 @@ void AdminMenu::vaciarAtributos(Mascota& mascota)
     mascota.felicidad().establecer(0.f);
     mascota.energia().establecer(0.f);
     mascota.higiene().establecer(0.f);
-    // La salud se deja en 1 para poder observar la agonia sin matarla al instante.
+
     mascota.salud().establecer(1.f);
     anotar("Todas las barras al minimo.");
 }
@@ -128,7 +122,7 @@ void AdminMenu::matar(Mascota& mascota)
 {
     inmortalidad_ = false;
     mascota.salud().establecer(0.f);
-    mascota.actualizar(0.f);   // dispara la comprobacion de muerte
+    mascota.actualizar(0.f);
     anotar("Mascota eliminada.");
 }
 
@@ -143,8 +137,6 @@ void AdminMenu::envejecer(Mascota& mascota, float dias)
     mascota.establecerEdad(mascota.edad() + dias * 86400.f);
     anotar("Edad +" + util::aTexto(dias) + " dia(s).");
 }
-
-// ------------------------------------------------------- Trampas activas ----
 
 void AdminMenu::alternarInmortalidad()
 {
@@ -163,13 +155,9 @@ void AdminMenu::aplicarPorTick(Mascota& mascota, float)
 {
     if (!inmortalidad_) return;
 
-    // Se deja un piso de salud en lugar de fijarla en 100: asi la mascota
-    // todavia puede entrar en Enferma y se ven las transiciones.
     if (mascota.salud().porDebajoDe(kSaludMinima))
         mascota.salud().establecer(kSaludMinima);
 }
-
-// ---------------------------------------------------- Velocidad del reloj ---
 
 void AdminMenu::siguienteEscala()
 {
@@ -177,15 +165,11 @@ void AdminMenu::siguienteEscala()
     anotar("Velocidad x" + util::aTexto(escalaTiempo()));
 }
 
-// ---------------------------------------------------------------- Economia --
-
 void AdminMenu::agregarMonedas(Inventario& inventario, int cantidad)
 {
     inventario.agregarMonedas(cantidad);
     anotar("+" + std::to_string(cantidad) + " monedas.");
 }
-
-// ---------------------------------------------------------------- Registro --
 
 void AdminMenu::anotar(const std::string& mensaje)
 {
@@ -199,4 +183,4 @@ std::string AdminMenu::ultimaAccion() const
     return registro_.empty() ? std::string() : registro_.back();
 }
 
-} // namespace vp
+}
