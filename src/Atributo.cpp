@@ -17,7 +17,21 @@ Atributo::Atributo(std::string nombre, float valorInicial, float tasaPorSegundo,
 
 void Atributo::actualizar(float dt)
 {
-    modificar(tasaPorSegundo_ * dt);
+    float tasaEfectiva = tasaPorSegundo_;
+
+    if (enfriamientoRestante_ > 0.f)
+    {
+        tasaEfectiva *= factorEnfriamiento_;
+        enfriamientoRestante_ -= dt;
+    }
+
+    modificar(tasaEfectiva * dt);
+}
+
+void Atributo::iniciarEnfriamiento(float segundos, float factor)
+{
+    enfriamientoRestante_ = segundos;
+    factorEnfriamiento_   = factor;
 }
 
 void Atributo::modificar(float cantidad)

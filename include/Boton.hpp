@@ -64,6 +64,9 @@ private:
     bool habilitado_ = true;
     bool disponible_ = true;
     bool activo_     = false;
+
+    sf::Clock relojHover_;
+    float     desplazamientoHover_ = 0.f;
 };
 
 }

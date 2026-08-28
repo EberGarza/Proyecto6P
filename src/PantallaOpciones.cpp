@@ -11,9 +11,6 @@ namespace vp {
 
 namespace {
 
-const sf::Color kAmarillo(255, 220, 80);
-const sf::Color kFondoBase(38, 26, 54);
-
 constexpr unsigned kTamTitulo = 44;
 constexpr unsigned kTamFila   = 22;
 
@@ -22,18 +19,20 @@ constexpr float kAltoBarra  = 14.f;
 
 }
 
-PantallaOpciones::PantallaOpciones(const sf::Font& fuente, sf::Vector2f tamanoVentana)
+PantallaOpciones::PantallaOpciones(const sf::Font& fuente, sf::Vector2f tamanoVentana,
+                                   bool pantallaCompletaActiva)
     : fuente_(fuente)
     , tamanoVentana_(tamanoVentana)
     , titulo_(fuente, "OPCIONES", kTamTitulo)
     , pie_(fuente, "ARRIBA/ABAJO ELEGIR    IZQ/DER AJUSTAR    ESC VOLVER",
            tema::kTextoChico)
+    , pantallaCompletaActiva_(pantallaCompletaActiva)
 {
 
     if (componerMosaico(lienzoFondo_, tamanoVentana_,
                         { "assets/images/conejo_hembra.txt",
                           "assets/images/castor_hembra.txt" },
-                        kFondoBase))
+                        tema::kFondoMosaico))
         fondo_.emplace(lienzoFondo_.getTexture());
 
     velo_.setSize(tamanoVentana_);
@@ -58,7 +57,7 @@ void PantallaOpciones::construirInterfaz()
     const sf::Vector2f posMarco((tamanoVentana_.x - tamanoMarco.x) / 2.f, 52.f);
     marquesina_ = tema::panelBiselado(posMarco, tamanoMarco, tema::kPanelBorde);
 
-    titulo_.setFillColor(kAmarillo);
+    titulo_.setFillColor(tema::kAcento);
     const sf::FloatRect lt = titulo_.getLocalBounds();
     titulo_.setOrigin({ lt.position.x + lt.size.x / 2.f,
                         lt.position.y + lt.size.y / 2.f });
@@ -97,11 +96,7 @@ void PantallaOpciones::construirInterfaz()
     fondoVolumen_.setOutlineThickness(1.f);
     fondoVolumen_.setOutlineColor(tema::kPanelBorde);
 
-    senalador_.setPointCount(3);
-    senalador_.setPoint(0, { 0.f,  0.f });
-    senalador_.setPoint(1, { 14.f, 8.f });
-    senalador_.setPoint(2, { 0.f, 16.f });
-    senalador_.setFillColor(kAmarillo);
+    senalador_ = tema::senaladorMenu(tema::kAcento, { 14.f, 16.f });
 
     const float altoTira = 34.f;
     tiraPie_ = tema::panelBiselado({ 0.f, tamanoVentana_.y - altoTira },
@@ -117,10 +112,12 @@ void PantallaOpciones::construirInterfaz()
 
 void PantallaOpciones::refrescarTextos()
 {
-    const std::string etiquetas[] = { "Musica", "Volumen", "Partida guardada", "Volver" };
+    const std::string etiquetas[] = { "Musica", "Volumen", "Pantalla completa",
+                                      "Partida guardada", "Volver" };
     const std::string valores[]   = {
         musicaActiva_ ? "activada" : "silenciada",
         std::to_string(volumen_),
+        pantallaCompletaActiva_ ? "completa" : "ventana",
         borrada_ ? "borrada" : "borrar",
         ""
     };
@@ -141,7 +138,7 @@ void PantallaOpciones::refrescarTextos()
     const float fraccion = static_cast<float>(volumen_) / 100.f;
     barraVolumen_ = tema::paralelogramo(origenVolumen_,
                                         { anchoVolumen_ * fraccion, kAltoBarra }, 5.f);
-    barraVolumen_.setFillColor(musicaActiva_ ? kAmarillo : tema::kTextoTenue);
+    barraVolumen_.setFillColor(musicaActiva_ ? tema::kAcento : tema::kTextoTenue);
 }
 
 void PantallaOpciones::ajustar(int direccion)
@@ -160,6 +157,11 @@ void PantallaOpciones::ajustar(int direccion)
             musica_.setVolume(static_cast<float>(volumen_));
             break;
 
+        case Fila::PantallaCompleta:
+            pantallaCompletaActiva_ = !pantallaCompletaActiva_;
+            solicitar(Transicion::AlternarPantallaCompleta);
+            break;
+
         default:
             break;
     }
@@ -172,6 +174,7 @@ void PantallaOpciones::activar()
     {
         case Fila::Musica:
         case Fila::Volumen:
+        case Fila::PantallaCompleta:
             ajustar(+1);
             break;
 
@@ -275,10 +278,10 @@ void PantallaOpciones::actualizar(float dt)
 
         placas_[i].setFillColor(elegida ? tema::kBotonHover : tema::kBoton);
         placas_[i].setOutlineThickness(2.f);
-        placas_[i].setOutlineColor(elegida ? kAmarillo : tema::kPanelBorde);
+        placas_[i].setOutlineColor(elegida ? tema::kAcento : tema::kPanelBorde);
 
         etiquetas_[i].setFillColor(elegida ? tema::kTexto : tema::kTextoSuave);
-        valores_[i].setFillColor(elegida ? kAmarillo : tema::kTextoSuave);
+        valores_[i].setFillColor(elegida ? tema::kAcento : tema::kTextoSuave);
     }
 
     const sf::FloatRect placa = placas_[seleccion_].getGlobalBounds();

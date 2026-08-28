@@ -16,7 +16,8 @@
 namespace vp {
 namespace {
 
-constexpr float kAltoBotonera   = 110.f;
+constexpr float kAltoBotonera         = 110.f;
+constexpr float kTiempoConfirmarSalida = 2.5f;
 
 }
 
@@ -30,10 +31,11 @@ PantallaJuego::PantallaJuego(const sf::Font& fuente,
     , hud_(fuente, tamanoVentana, Hud::kAlturaTira)
     , panelAdmin_(fuente, tamanoVentana)
     , panelComida_(fuente, tamanoVentana)
+    , escenaPelea_(fuente, tamanoVentana)
     , textoOcupada_(fuente, "", tema::kTextoNormal)
     , tituloMetrica_(fuente, "TELEMETRIA", tema::kTextoChico)
     , textoMetrica_(fuente, "", tema::kTextoChico)
-    , pie_(fuente, "TECLAS 1-6  ACCIONES     ESC  SALIR", 13)
+    , pie_(fuente, "TECLAS 1-7  ACCIONES     ESC  SALIR", 13)
     , anuncio_(fuente, "", 64)
     , tamanoVentana_(tamanoVentana)
 {
@@ -66,6 +68,13 @@ PantallaJuego::PantallaJuego(const sf::Font& fuente,
     crearBotones();
     panelAdmin_.enlazar(admin_, *mascota_, inventario_, vista_);
     estadoAnunciado_ = mascota_->tipoEstado();
+
+    if (musica_.load("assets/sound/Game_t.ogg"))
+    {
+        musica_.setLoop(true);
+        musica_.setVolume(40.f);
+        musica_.play();
+    }
 }
 
 void PantallaJuego::construirEscenario()
@@ -105,7 +114,7 @@ void PantallaJuego::crearBotones()
 
     const float margen = 18.f;
     const float hueco  = 8.f;
-    const int   total  = 7;
+    const int   total  = 8;
     const float anchoBoton = (tamanoVentana_.x - margen * 2.f - hueco * (total - 1)) / total;
 
     const sf::Vector2f tamano(anchoBoton, 52.f);
@@ -139,6 +148,8 @@ void PantallaJuego::crearBotones()
             [this] { intentarAccion(AccionMascota::Dormir); },    true);
     agregar("ACARICIAR", AccionMascota::Acariciar,
             [this] { intentarAccion(AccionMascota::Acariciar); }, true);
+    agregar("PELEAR",    AccionMascota::Pelear,
+            [this] { intentarAccion(AccionMascota::Pelear); },    true);
 
     if (dynamic_cast<Conejo*>(m))
         agregar("SALTAR", AccionMascota::Especial,
@@ -161,6 +172,7 @@ void PantallaJuego::intentarAccion(AccionMascota accion)
     {
 
         mascota_->registrar(permiso.motivo);
+        anunciar(permiso.motivo, tema::kMedio);
         return;
     }
 
@@ -173,6 +185,7 @@ void PantallaJuego::intentarAccion(AccionMascota accion)
         case AccionMascota::Dormir:    mascota_->dormir();          break;
         case AccionMascota::Despertar: mascota_->despertar();       break;
         case AccionMascota::Acariciar: mascota_->acariciar();       break;
+        case AccionMascota::Pelear:    abrirPelea();                break;
 
         case AccionMascota::Especial:
             if (auto* conejo = dynamic_cast<Conejo*>(mascota_.get())) conejo->saltar();
@@ -223,6 +236,13 @@ void PantallaJuego::abrirDespensa()
     panelComida_.abrir();
 }
 
+void PantallaJuego::abrirPelea()
+{
+    if (!mascota_->estaViva()) return;
+
+    escenaPelea_.abrir(*mascota_, vista_);
+}
+
 void PantallaJuego::usarPrimero(const std::string& categoria)
 {
 
@@ -263,6 +283,12 @@ void PantallaJuego::manejarEvento(const sf::Event& evento)
     if (evento.is<sf::Event::Closed>())
     {
         solicitar(Transicion::Salir);
+        return;
+    }
+
+    if (escenaPelea_.visible())
+    {
+        escenaPelea_.manejarEvento(evento);
         return;
     }
 
@@ -316,8 +342,21 @@ void PantallaJuego::manejarEvento(const sf::Event& evento)
             case sf::Keyboard::Key::F1:   admin_.alternarVisible();  break;
 
             case sf::Keyboard::Key::Escape:
-                if (admin_.visible()) admin_.cerrar();
-                else                  solicitar(Transicion::Salir);
+                if (admin_.visible())
+                {
+                    admin_.cerrar();
+                    break;
+                }
+
+                if (confirmandoSalida_)
+                {
+                    solicitar(Transicion::Salir);
+                    break;
+                }
+
+                confirmandoSalida_       = true;
+                confirmarSalidaRestante_ = kTiempoConfirmarSalida;
+                anunciar("Pulsa ESC otra vez para salir", tema::kAcento);
                 break;
 
             case sf::Keyboard::Key::Num1: intentarAccion(AccionMascota::Alimentar); break;
@@ -326,6 +365,7 @@ void PantallaJuego::manejarEvento(const sf::Event& evento)
             case sf::Keyboard::Key::Num4: intentarAccion(AccionMascota::Medicar);   break;
             case sf::Keyboard::Key::Num5: intentarAccion(AccionMascota::Dormir);    break;
             case sf::Keyboard::Key::Num6: intentarAccion(AccionMascota::Acariciar); break;
+            case sf::Keyboard::Key::Num7: intentarAccion(AccionMascota::Pelear);    break;
 
             default: break;
         }
@@ -352,6 +392,12 @@ void PantallaJuego::actualizar(float dt)
 
     vista_.actualizar(*mascota_, dt);
     hud_.actualizar(*mascota_, dt);
+
+    if (confirmandoSalida_)
+    {
+        confirmarSalidaRestante_ -= dt;
+        if (confirmarSalidaRestante_ <= 0.f) confirmandoSalida_ = false;
+    }
 
     if (mascota_->tipoEstado() != estadoAnunciado_)
     {
@@ -383,6 +429,14 @@ void PantallaJuego::actualizar(float dt)
 
     if (admin_.metricaVisible())
         actualizarMetrica();
+
+    const bool peleaVisibleAntes = escenaPelea_.visible();
+    escenaPelea_.actualizar(dt);
+    if (peleaVisibleAntes && !escenaPelea_.visible())
+    {
+        vista_.establecerPosicion(centroEscenario_);
+        vista_.establecerEscala(3.f);
+    }
 }
 
 void PantallaJuego::actualizarMetrica()
@@ -402,6 +456,12 @@ void PantallaJuego::actualizarMetrica()
 
 void PantallaJuego::dibujar(sf::RenderTarget& objetivo) const
 {
+    if (escenaPelea_.visible())
+    {
+        objetivo.draw(escenaPelea_);
+        return;
+    }
+
     if (escenario_) objetivo.draw(*escenario_);
     objetivo.draw(vista_);
 

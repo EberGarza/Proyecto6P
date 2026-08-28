@@ -16,7 +16,8 @@ namespace vp {
 class PantallaOpciones : public Pantalla
 {
 public:
-    PantallaOpciones(const sf::Font& fuente, sf::Vector2f tamanoVentana);
+    PantallaOpciones(const sf::Font& fuente, sf::Vector2f tamanoVentana,
+                     bool pantallaCompletaActiva);
 
     void manejarEvento(const sf::Event& evento) override;
     void actualizar(float dt) override;
@@ -27,6 +28,7 @@ private:
     {
         Musica = 0,
         Volumen,
+        PantallaCompleta,
         BorrarPartida,
         Volver,
         Total
@@ -64,10 +66,11 @@ private:
 
     Music musica_;
 
-    std::size_t seleccion_    = 0;
-    bool        musicaActiva_ = true;
-    int         volumen_      = 45;
-    bool        borrada_      = false;
+    std::size_t seleccion_             = 0;
+    bool        musicaActiva_          = true;
+    int         volumen_               = 45;
+    bool        pantallaCompletaActiva_ = false;
+    bool        borrada_               = false;
     float       reloj_        = 0.f;
     sf::Vector2f raton_ { -1.f, -1.f };
 

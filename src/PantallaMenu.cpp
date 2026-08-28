@@ -3,18 +3,21 @@
 #include "Mosaico.hpp"
 #include "Tema.hpp"
 
+#include <algorithm>
 #include <cmath>
+#include <cstdint>
 
 namespace vp {
 
 namespace {
 
-const sf::Color kAmarillo(255, 220, 80);
-const sf::Color kFondoBase(38, 26, 54);
-
 constexpr unsigned kTamTitulo  = 56;
 constexpr unsigned kTamOpcion  = 40;
 constexpr float    kSeparacion = 30.f;
+
+constexpr float kGananciaAudio = 6.f;
+constexpr float kAtaqueAudio   = 18.f;
+constexpr float kCaidaAudio    = 4.f;
 
 }
 
@@ -30,7 +33,7 @@ PantallaMenu::PantallaMenu(const sf::Font& fuente, sf::Vector2f tamanoVentana)
     const sf::Vector2f posMarco((tamanoVentana_.x - tamanoMarco.x) / 2.f, 46.f);
     marquesina_ = tema::panelBiselado(posMarco, tamanoMarco, tema::kPanelBorde);
 
-    titulo_.setFillColor(kAmarillo);
+    titulo_.setFillColor(tema::kAcento);
     const sf::FloatRect limites = titulo_.getLocalBounds();
     titulo_.setOrigin({ limites.position.x + limites.size.x / 2.f,
                         limites.position.y + limites.size.y / 2.f });
@@ -49,11 +52,7 @@ PantallaMenu::PantallaMenu(const sf::Font& fuente, sf::Vector2f tamanoVentana)
 
     colocarOpciones();
 
-    senalador_.setPointCount(3);
-    senalador_.setPoint(0, { 0.f,  0.f });
-    senalador_.setPoint(1, { 16.f, 9.f });
-    senalador_.setPoint(2, { 0.f, 18.f });
-    senalador_.setFillColor(kAmarillo);
+    senalador_ = tema::senaladorMenu(tema::kAcento);
 
     const float altoTira = 34.f;
     tiraPie_ = tema::panelBiselado({ 0.f, tamanoVentana_.y - altoTira },
@@ -73,6 +72,15 @@ PantallaMenu::PantallaMenu(const sf::Font& fuente, sf::Vector2f tamanoVentana)
         musica_.play();
     }
 
+    if (pistaAnalisis_.openFromFile("assets/sound/Menu.ogg"))
+    {
+
+        analisisDisponible_   = true;
+        tasaMuestreoAnalisis_ = pistaAnalisis_.getSampleRate();
+        canalesAnalisis_      = pistaAnalisis_.getChannelCount();
+        bufferAnalisis_.resize(static_cast<std::size_t>(tasaMuestreoAnalisis_) * canalesAnalisis_);
+    }
+
     botonMusica_.cargar("assets/images/speaker.png", { 26.f, 22.f }, 0.03f);
     botonMusica_.establecerActivo(musica_.isPlaying());
 }
@@ -80,13 +88,18 @@ PantallaMenu::PantallaMenu(const sf::Font& fuente, sf::Vector2f tamanoVentana)
 void PantallaMenu::construirFondo()
 {
 
-    if (!componerMosaico(lienzoFondo_, tamanoVentana_,
+    const sf::Vector2f tamanoLienzo(tamanoVentana_.x + kMargenFondo * 2.f,
+                                    tamanoVentana_.y + kMargenFondo * 2.f);
+
+    if (!componerMosaico(lienzoFondo_, tamanoLienzo,
                          { "assets/images/conejo_macho.txt",
                            "assets/images/castor_macho.txt" },
-                         kFondoBase))
+                         tema::kFondoMosaico))
         return;
 
     fondo_.emplace(lienzoFondo_.getTexture());
+    fondo_->setOrigin({ tamanoLienzo.x / 2.f, tamanoLienzo.y / 2.f });
+    fondo_->setPosition({ tamanoVentana_.x / 2.f, tamanoVentana_.y / 2.f });
 
     velo_.setSize(tamanoVentana_);
     velo_.setFillColor(sf::Color(20, 12, 30, 90));
@@ -206,9 +219,59 @@ void PantallaMenu::manejarEvento(const sf::Event& evento)
     }
 }
 
+void PantallaMenu::actualizarNivelAudio(float dt)
+{
+    if (!analisisDisponible_ || !musica_.isPlaying())
+    {
+        nivelAudio_ += (0.f - nivelAudio_) * std::min(1.f, dt * kCaidaAudio);
+        return;
+    }
+
+    std::uint64_t aLeer = static_cast<std::uint64_t>(
+        dt * static_cast<float>(tasaMuestreoAnalisis_ * canalesAnalisis_));
+    if (aLeer == 0) return;
+    aLeer = std::min<std::uint64_t>(aLeer, bufferAnalisis_.size());
+
+    std::uint64_t leidas = pistaAnalisis_.read(bufferAnalisis_.data(), aLeer);
+    if (leidas == 0)
+    {
+
+        pistaAnalisis_.seek(std::uint64_t{ 0 });
+        leidas = pistaAnalisis_.read(bufferAnalisis_.data(), aLeer);
+    }
+    if (leidas == 0) return;
+
+    double sumaCuadrados = 0.0;
+    for (std::uint64_t i = 0; i < leidas; ++i)
+    {
+        const double muestra = bufferAnalisis_[i] / 32768.0;
+        sumaCuadrados += muestra * muestra;
+    }
+    const float rms = static_cast<float>(std::sqrt(sumaCuadrados / static_cast<double>(leidas)));
+
+    const float objetivo  = std::min(1.f, rms * kGananciaAudio);
+    const float velocidad = (objetivo > nivelAudio_) ? kAtaqueAudio : kCaidaAudio;
+    nivelAudio_ += (objetivo - nivelAudio_) * std::min(1.f, dt * velocidad);
+}
+
 void PantallaMenu::actualizar(float dt)
 {
     reloj_ += dt;
+    actualizarNivelAudio(dt);
+
+    if (fondo_)
+    {
+        const float derivaX = std::sin(reloj_ * 0.35f) * (kMargenFondo * 0.55f);
+        const float derivaY = std::cos(reloj_ * 0.27f) * (kMargenFondo * 0.35f);
+        const float pulso   = 1.f + nivelAudio_ * 0.05f;
+
+        fondo_->setPosition({ tamanoVentana_.x / 2.f + derivaX,
+                             tamanoVentana_.y / 2.f + derivaY });
+        fondo_->setScale({ pulso, pulso });
+    }
+
+    velo_.setFillColor(sf::Color(20, 12, 30,
+        static_cast<std::uint8_t>(70.f + nivelAudio_ * 45.f)));
 
     const float altoTotal = placas_.size() * kAltoPlaca +
                             (placas_.size() - 1) * kHuecoPlaca;
@@ -219,7 +282,7 @@ void PantallaMenu::actualizar(float dt)
     {
         const bool elegida = (i == seleccion_);
 
-        placas_[i].setFillColor(elegida ? kAmarillo : tema::kBoton);
+        placas_[i].setFillColor(elegida ? tema::kAcento : tema::kBoton);
         placas_[i].setOutlineThickness(2.f);
         placas_[i].setOutlineColor(elegida ? tema::kTexto : tema::kPanelBorde);
 

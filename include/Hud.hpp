@@ -32,10 +32,15 @@ private:
     sf::Text especie_;
     sf::Text estado_;
     sf::Text bitacora_;
+    sf::Text monedas_;
+    sf::CircleShape iconoMoneda_;
 
     sf::RectangleShape fondoBitacora_;
 
     std::vector<BarraAtributo> barras_;
+
+    std::size_t entradasBitacoraVistas_ = static_cast<std::size_t>(-1);
+    std::string ultimaEntradaVista_;
 
     static constexpr std::size_t kLineasBitacora = 4;
 };

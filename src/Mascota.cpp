@@ -9,6 +9,13 @@
 
 namespace vp {
 
+namespace {
+
+constexpr float kDuracionEnfriamiento = 30.f;
+constexpr float kFactorEnfriamiento   = 0.3f;
+
+}
+
 Mascota::Mascota(std::string nombre, Genero genero)
     : nombre_(std::move(nombre))
     , genero_(genero)
@@ -126,6 +133,11 @@ Permiso Mascota::puede(AccionMascota accion) const
                 return { false, nombre_ + " no tiene energia para eso." };
             break;
 
+        case AccionMascota::Pelear:
+            if (energia_.porDebajoDe(30.f))
+                return { false, nombre_ + " no tiene energia para pelear." };
+            break;
+
         case AccionMascota::Dormir:
         case AccionMascota::Acariciar:
         case AccionMascota::Despertar:
@@ -180,17 +192,18 @@ void Mascota::avanzarActividad(float dt)
     Atributo* destino = atributoDeActividad();
     if (!destino) { cancelarActividad(); return; }
 
-    if (destino->enMaximo())
-    {
-        const Actividad terminada = actividadEnCurso_;
-        actividadEnCurso_ = Actividad::Ninguna;
+    float paso = std::min(restanteActividad_, ritmoActividad_ * dt);
 
-        if (terminada == Actividad::Comiendo)
-            registrar(nombre_ + " ya no puede mas.");
-        return;
+    // Si con este paso el atributo llegaria a su tope, se recorta aqui: la
+    // actividad termina en cuanto se llena, en vez de seguir "ocupada"
+    // animando hasta agotar su duracion completa.
+    const float margenHastaMaximo = std::max(0.f, destino->maximo() - destino->valor());
+    if (margenHastaMaximo < paso)
+    {
+        paso = margenHastaMaximo;
+        restanteActividad_ = paso;
     }
 
-    const float paso = std::min(restanteActividad_, ritmoActividad_ * dt);
     destino->modificar(paso);
     restanteActividad_ -= paso;
 
@@ -235,6 +248,11 @@ void Mascota::avanzarActividad(float dt)
         case Actividad::Ninguna:
             break;
     }
+
+    // Enfriamiento: si el atributo que llenaba la actividad quedo al tope,
+    // se le da un respiro para que no vuelva a bajar de inmediato.
+    if (destino->enMaximo())
+        destino->iniciarEnfriamiento(kDuracionEnfriamiento, kFactorEnfriamiento);
 }
 
 bool Mascota::iniciarAccionEspecial(float animo, float segundos,
@@ -400,6 +418,12 @@ void Mascota::registrar(const std::string& mensaje)
 std::string Mascota::ultimoEvento() const
 {
     return bitacora_.empty() ? std::string() : bitacora_.back();
+}
+
+void Mascota::agregarMonedas(int cantidad)
+{
+    if (cantidad <= 0) return;
+    monedas_ += cantidad;
 }
 
 void Mascota::establecerTasasBase(float saciedad, float felicidad,

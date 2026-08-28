@@ -36,6 +36,8 @@ inline const sf::Color kBarraFondo   (30, 18, 44);
 inline const sf::Color kBarraEstela  (198, 44, 40);
 inline const sf::Color kBarraBrillo  (255, 255, 255, 60);
 
+inline const sf::Color kFondoMosaico (38, 26, 54);
+
 inline constexpr float kRadioPanel   = 0.f;
 inline constexpr float kMargen       = 18.f;
 inline constexpr float kSesgo        = 10.f;
@@ -56,14 +58,21 @@ inline sf::Color conAlfa(sf::Color color, std::uint8_t alfa)
     return color;
 }
 
-inline sf::ConvexShape paralelogramo(sf::Vector2f posicion, sf::Vector2f tamano,
-                                     float sesgo = kSesgo)
+inline void ponerParalelogramo(sf::ConvexShape& forma, sf::Vector2f posicion,
+                               sf::Vector2f tamano, float sesgo = kSesgo)
 {
-    sf::ConvexShape forma(4);
+    if (forma.getPointCount() != 4) forma.setPointCount(4);
     forma.setPoint(0, { posicion.x + sesgo,            posicion.y });
     forma.setPoint(1, { posicion.x + sesgo + tamano.x, posicion.y });
     forma.setPoint(2, { posicion.x + tamano.x,         posicion.y + tamano.y });
     forma.setPoint(3, { posicion.x,                    posicion.y + tamano.y });
+}
+
+inline sf::ConvexShape paralelogramo(sf::Vector2f posicion, sf::Vector2f tamano,
+                                     float sesgo = kSesgo)
+{
+    sf::ConvexShape forma;
+    ponerParalelogramo(forma, posicion, tamano, sesgo);
     return forma;
 }
 
@@ -120,15 +129,26 @@ inline sf::VertexArray barridoCRT(sf::Vector2f tamano, std::uint8_t intensidad =
     return lineas;
 }
 
+inline sf::ConvexShape senaladorMenu(sf::Color color, sf::Vector2f tamano = { 16.f, 18.f })
+{
+    sf::ConvexShape senalador(3);
+    senalador.setPoint(0, { 0.f,          0.f });
+    senalador.setPoint(1, { tamano.x,     tamano.y * 0.5f });
+    senalador.setPoint(2, { 0.f,          tamano.y });
+    senalador.setFillColor(color);
+    return senalador;
+}
+
 inline void dibujarConSombra(sf::RenderTarget& objetivo, const sf::Text& texto,
-                             float desplazamiento = 2.f)
+                             float desplazamiento = 2.f,
+                             sf::RenderStates estados = sf::RenderStates::Default)
 {
     sf::Text sombra = texto;
     sombra.setFillColor(sf::Color(0, 0, 0, 200));
     sombra.setPosition({ texto.getPosition().x + desplazamiento,
                          texto.getPosition().y + desplazamiento });
-    objetivo.draw(sombra);
-    objetivo.draw(texto);
+    objetivo.draw(sombra, estados);
+    objetivo.draw(texto, estados);
 }
 
 }

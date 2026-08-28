@@ -87,16 +87,16 @@ void BarraAtributo::actualizar(const Atributo& atributo, float dt)
 
     const float util = tamano_.x - 4.f;
 
-    estela_ = tema::paralelogramo({ posicion_.x + 2.f, posicion_.y + 2.f },
-                                  { util * rastro_, tamano_.y - 4.f });
+    tema::ponerParalelogramo(estela_, { posicion_.x + 2.f, posicion_.y + 2.f },
+                             { util * rastro_, tamano_.y - 4.f });
     estela_.setFillColor(tema::kBarraEstela);
 
-    relleno_ = tema::paralelogramo({ posicion_.x + 2.f, posicion_.y + 2.f },
-                                   { util * nivel_, tamano_.y - 4.f });
+    tema::ponerParalelogramo(relleno_, { posicion_.x + 2.f, posicion_.y + 2.f },
+                             { util * nivel_, tamano_.y - 4.f });
     relleno_.setFillColor(tema::segunNivel(nivel_));
 
-    brillo_ = tema::paralelogramo({ posicion_.x + 2.f, posicion_.y + 2.f },
-                                  { util * nivel_, (tamano_.y - 4.f) * 0.4f });
+    tema::ponerParalelogramo(brillo_, { posicion_.x + 2.f, posicion_.y + 2.f },
+                             { util * nivel_, (tamano_.y - 4.f) * 0.4f });
     brillo_.setFillColor(tema::kBarraBrillo);
 
     valor_.setString(util::aTexto(atributo.valor()));

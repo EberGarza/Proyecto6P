@@ -6,9 +6,11 @@
 #include "Pantalla.hpp"
 #include "Tema.hpp"
 
+#include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
 
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <vector>
@@ -36,6 +38,7 @@ private:
     void colocarOpciones();
     void elegir(std::size_t indice);
     void mover(int direccion);
+    void actualizarNivelAudio(float dt);
 
     const sf::Font& fuente_;
     sf::Vector2f    tamanoVentana_;
@@ -43,6 +46,15 @@ private:
     sf::RenderTexture         lienzoFondo_;
     std::optional<sf::Sprite> fondo_;
     sf::RectangleShape        velo_;
+
+    sf::InputSoundFile        pistaAnalisis_;
+    bool                      analisisDisponible_   = false;
+    unsigned                  tasaMuestreoAnalisis_ = 44100;
+    unsigned                  canalesAnalisis_      = 2;
+    std::vector<std::int16_t> bufferAnalisis_;
+    float                     nivelAudio_ = 0.f;
+
+    static constexpr float kMargenFondo = 110.f;
 
     tema::PanelBiselado   marquesina_;
     sf::Text              titulo_;

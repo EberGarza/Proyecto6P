@@ -1,7 +1,9 @@
 #pragma once
 
 #include "Boton.hpp"
+#include "EscenaPelea.hpp"
 #include "Hud.hpp"
+#include "Music.hpp"
 #include "Tema.hpp"
 #include "PanelAdmin.hpp"
 #include "PanelComida.hpp"
@@ -45,6 +47,7 @@ private:
     void anunciar(const std::string& texto, sf::Color color);
 
     void abrirDespensa();
+    void abrirPelea();
 
     void usarPrimero(const std::string& categoria);
 
@@ -63,6 +66,7 @@ private:
     AdminMenu                    admin_;
     PanelAdmin                   panelAdmin_;
     PanelComida                  panelComida_;
+    EscenaPelea                  escenaPelea_;
 
     std::vector<AccionMascota>   accionDeBoton_;
 
@@ -89,6 +93,11 @@ private:
     sf::Text                     anuncio_;
     float                        anuncioRestante_ = 0.f;
     TipoEstado                   estadoAnunciado_ = TipoEstado::Normal;
+
+    bool                         confirmandoSalida_        = false;
+    float                        confirmarSalidaRestante_  = 0.f;
+
+    Music                        musica_;
 
     sf::Vector2f                 tamanoVentana_;
     sf::Vector2f                 centroEscenario_ { 0.f, 0.f };

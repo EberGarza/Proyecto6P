@@ -94,6 +94,10 @@ public:
     const std::deque<std::string>& bitacora() const { return bitacora_; }
     std::string ultimoEvento() const;
 
+    int  monedas() const { return monedas_; }
+    void establecerMonedas(int cantidad) { monedas_ = cantidad < 0 ? 0 : cantidad; }
+    void agregarMonedas(int cantidad);
+
     void restaurarTasasBase();
 
     float tasaBaseSaciedad() const  { return tasaBaseSaciedad_; }
@@ -145,6 +149,7 @@ private:
 
     MaquinaEstados          maquina_;
     std::deque<std::string> bitacora_;
+    int                     monedas_ = 0;
 
     Actividad   actividadEnCurso_  = Actividad::Ninguna;
     float       restanteActividad_ = 0.f;

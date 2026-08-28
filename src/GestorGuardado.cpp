@@ -77,6 +77,7 @@ bool GestorGuardado::guardar(const Mascota& mascota, const std::string& ruta)
     archivo << "higiene="   << mascota.higiene().valor()     << '\n';
     archivo << "salud="     << mascota.salud().valor()       << '\n';
     archivo << "estado="    << static_cast<int>(mascota.tipoEstado()) << '\n';
+    archivo << "monedas="   << mascota.monedas()             << '\n';
 
     return archivo.good();
 }
@@ -104,6 +105,7 @@ std::unique_ptr<Mascota> GestorGuardado::cargar(const std::string& ruta)
     mascota->energia().establecer  (aReal(campos, "energia",   100.f));
     mascota->higiene().establecer  (aReal(campos, "higiene",   100.f));
     mascota->salud().establecer    (aReal(campos, "salud",     100.f));
+    mascota->establecerMonedas(aEntero(campos, "monedas", 0));
 
     const int estadoGuardado = aEntero(campos, "estado", 0);
     const auto estados = todosLosEstados();

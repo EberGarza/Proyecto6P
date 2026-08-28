@@ -1,8 +1,15 @@
 #include "Boton.hpp"
 
+#include <algorithm>
 #include <utility>
 
 namespace vp {
+namespace {
+
+constexpr float kElevacionHover = 3.f;
+constexpr float kVelocidadHover = 16.f;
+
+}
 
 Boton::Boton(const sf::Font& fuente, std::string etiqueta,
              sf::Vector2f posicion, sf::Vector2f tamano, Accion accion)
@@ -58,6 +65,10 @@ void Boton::actualizar(sf::Vector2f posicionRaton)
 {
     resaltado_ = habilitado_ && disponible_ && contiene(posicionRaton);
     refrescarColor();
+
+    const float dt = std::min(relojHover_.restart().asSeconds(), 0.2f);
+    const float objetivo = resaltado_ ? kElevacionHover : 0.f;
+    desplazamientoHover_ += (objetivo - desplazamientoHover_) * std::min(1.f, dt * kVelocidadHover);
 }
 
 bool Boton::procesarClic(sf::Vector2f posicionClic)
@@ -145,17 +156,20 @@ bool Boton::contiene(sf::Vector2f punto) const
 
 void Boton::draw(sf::RenderTarget& objetivo, sf::RenderStates estados) const
 {
-    objetivo.draw(forma_, estados);
-    objetivo.draw(filoSuperior_, estados);
-    objetivo.draw(filoIzquierdo_, estados);
+    sf::RenderStates propios = estados;
+    propios.transform.translate({ 0.f, -desplazamientoHover_ });
+
+    objetivo.draw(forma_, propios);
+    objetivo.draw(filoSuperior_, propios);
+    objetivo.draw(filoIzquierdo_, propios);
 
     if (!tecla_.getString().isEmpty())
     {
-        objetivo.draw(marcaTecla_, estados);
-        objetivo.draw(tecla_, estados);
+        objetivo.draw(marcaTecla_, propios);
+        objetivo.draw(tecla_, propios);
     }
 
-    tema::dibujarConSombra(objetivo, texto_);
+    tema::dibujarConSombra(objetivo, texto_, 2.f, propios);
 }
 
 }

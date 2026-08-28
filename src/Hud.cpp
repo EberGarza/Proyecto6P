@@ -3,6 +3,8 @@
 #include "Mascota.hpp"
 #include "Utilidades.hpp"
 
+#include <string>
+
 namespace vp {
 namespace {
 
@@ -19,6 +21,7 @@ Hud::Hud(const sf::Font& fuente, sf::Vector2f tamanoVentana, float alturaTira)
     , especie_ (fuente, "", 13)
     , estado_  (fuente, "", 20)
     , bitacora_(fuente, "", 12)
+    , monedas_ (fuente, "0", tema::kTextoChico)
 {
     const float ancho = tamanoVentana_.x - kMargen * 2.f;
 
@@ -34,6 +37,14 @@ Hud::Hud(const sf::Font& fuente, sf::Vector2f tamanoVentana, float alturaTira)
     especie_.setPosition({ kMargen + 340.f, 18.f });
 
     estado_.setFillColor(tema::kTexto);
+
+    monedas_.setFillColor(tema::kAcento);
+
+    iconoMoneda_.setRadius(7.f);
+    iconoMoneda_.setOrigin({ 7.f, 7.f });
+    iconoMoneda_.setFillColor(sf::Color(255, 210, 60));
+    iconoMoneda_.setOutlineThickness(1.5f);
+    iconoMoneda_.setOutlineColor(tema::kPanelBorde);
 
     barras_.reserve(5);
     barras_.emplace_back(fuente, "SALUD", sf::Vector2f{ kMargen, 62.f },
@@ -76,16 +87,30 @@ void Hud::actualizar(const Mascota& mascota, float dt)
     sf::FloatRect limites = estado_.getLocalBounds();
     estado_.setPosition({ tamanoVentana_.x - kMargen - limites.size.x - 10.f, 8.f });
 
-    const auto& registro = mascota.bitacora();
-    std::string texto;
-    std::size_t mostradas = 0;
+    monedas_.setString(std::to_string(mascota.monedas()));
+    const sf::FloatRect limitesMonedas = monedas_.getLocalBounds();
+    const float xMonedas = tamanoVentana_.x - kMargen - limitesMonedas.size.x;
+    monedas_.setPosition({ xMonedas, 42.f });
+    iconoMoneda_.setPosition({ xMonedas - 14.f, 42.f + limitesMonedas.size.y / 2.f });
 
-    for (auto it = registro.rbegin(); it != registro.rend() && mostradas < kLineasBitacora; ++it)
+    const auto& registro = mascota.bitacora();
+    const std::string& ultima = registro.empty() ? ultimaEntradaVista_ : registro.back();
+
+    if (registro.size() != entradasBitacoraVistas_ || ultima != ultimaEntradaVista_)
     {
-        texto += "> " + *it + "\n";
-        ++mostradas;
+        entradasBitacoraVistas_ = registro.size();
+        ultimaEntradaVista_     = ultima;
+
+        std::string texto;
+        std::size_t mostradas = 0;
+
+        for (auto it = registro.rbegin(); it != registro.rend() && mostradas < kLineasBitacora; ++it)
+        {
+            texto += "> " + *it + "\n";
+            ++mostradas;
+        }
+        bitacora_.setString(texto);
     }
-    bitacora_.setString(texto);
 }
 
 void Hud::draw(sf::RenderTarget& objetivo, sf::RenderStates estados) const
@@ -96,6 +121,9 @@ void Hud::draw(sf::RenderTarget& objetivo, sf::RenderStates estados) const
     tema::dibujarConSombra(objetivo, nombre_);
     tema::dibujarConSombra(objetivo, especie_);
     tema::dibujarConSombra(objetivo, estado_);
+
+    objetivo.draw(iconoMoneda_, estados);
+    tema::dibujarConSombra(objetivo, monedas_);
 
     for (const BarraAtributo& barra : barras_)
         objetivo.draw(barra, estados);

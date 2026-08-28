@@ -15,7 +15,8 @@ public:
         Opciones,
         Seleccion,
         Juego,
-        Salir
+        Salir,
+        AlternarPantallaCompleta
     };
 
     virtual ~Pantalla() = default;

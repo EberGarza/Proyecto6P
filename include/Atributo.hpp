@@ -29,6 +29,9 @@ public:
     float tasa() const;
     void  establecerTasa(float tasaPorSegundo);
 
+    void iniciarEnfriamiento(float segundos, float factor);
+    bool enEnfriamiento() const { return enfriamientoRestante_ > 0.f; }
+
     bool enMinimo() const;
     bool enMaximo() const;
     bool porDebajoDe(float umbral) const;
@@ -40,6 +43,9 @@ private:
     float       maximo_;
     float       valor_;
     float       tasaPorSegundo_;
+
+    float enfriamientoRestante_ = 0.f;
+    float factorEnfriamiento_   = 1.f;
 };
 
 }

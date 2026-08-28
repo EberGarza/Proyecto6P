@@ -27,7 +27,8 @@ enum class AccionMascota
     Dormir,
     Despertar,
     Acariciar,
-    Especial
+    Especial,
+    Pelear
 };
 
 struct Permiso
