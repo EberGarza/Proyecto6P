@@ -1,0 +1,378 @@
+@startuml diagrama_clases
+' ============================================================
+'  VirtualPet - Diagrama de clases
+'  Nucleo (logica) + capa grafica (SFML)
+' ============================================================
+
+title Diagrama de clases - VirtualPet
+
+skinparam classAttributeIconSize 0
+hide empty members
+
+package "nucleo (logica pura, sin SFML)" {
+
+  class Atributo {
+    - nombre_ : string
+    - minimo_ : float
+    - maximo_ : float
+    - valor_ : float
+    - tasaPorSegundo_ : float
+    + actualizar(dt : float)
+    + modificar(cantidad : float)
+    + establecer(valor : float)
+    + porcentaje() : float
+    + porDebajoDe(umbral : float) : bool
+  }
+
+  abstract class Mascota {
+    - nombre_ : string
+    - edadSegundos_ : float
+    - viva_ : bool
+    - bitacora_ : deque<string>
+    + actualizar(dt : float)
+    + alimentar(cantidad : float) : bool
+    + jugar(intensidad : float) : bool
+    + asear(cantidad : float) : bool
+    + medicar(cantidad : float) : bool
+    + dormir() : bool
+    + despertar() : bool
+    + acariciar() : bool
+    + cambiarEstado(nuevo : TipoEstado)
+    + registrar(mensaje : string)
+    + {abstract} especie() : string
+    + {abstract} sonido() : string
+    + {abstract} comidaFavorita() : string
+    + {abstract} configurarRasgos()
+    # alCambiarEstado(ant, nuevo)
+    - aplicarEfectosSecundarios(dt : float)
+  }
+
+  class Perro
+  class Gastly {
+    + asustar() : bool
+  }
+  class Gato {
+    + acicalarse()
+  }
+  class Dragon {
+    + escupirFuego() : bool
+  }
+
+  class FabricaMascotas <<factory>> {
+    + {static} crear(tipo : TipoMascota, nombre) : Mascota
+    + {static} crear(especie : string, nombre) : Mascota
+    + {static} tiposDisponibles() : vector<TipoMascota>
+  }
+
+  enum TipoMascota { Gastly, Perro, Gato, Dragon }
+  enum TipoEstado {
+    Normal
+    Feliz
+    Hambrienta
+    Cansada
+    Durmiendo
+    Enferma
+    Jugando
+    Muerta
+  }
+
+  abstract class Estado {
+    + alEntrar(m : Mascota)
+    + {abstract} actualizar(m : Mascota, dt : float)
+    + alSalir(m : Mascota)
+    + {abstract} tipo() : TipoEstado
+    + {abstract} mensaje() : string
+    + permiteInteraccion() : bool
+    # {static} transicionCritica(m) : optional<TipoEstado>
+  }
+
+  class EstadoNormal
+  class EstadoFeliz
+  class EstadoHambrienta
+  class EstadoCansada
+  class EstadoDurmiendo
+  class EstadoEnferma
+  class EstadoJugando {
+    - duracion_ : float
+    - restante_ : float
+  }
+  class EstadoMuerta
+
+  class MaquinaEstados <<context>> {
+    - actual_ : unique_ptr<Estado>
+    - anterior_ : TipoEstado
+    - tiempoEnEstado_ : float
+    - pendiente_ : optional<TipoEstado>
+    + iniciar(m : Mascota, inicial : TipoEstado)
+    + actualizar(m : Mascota, dt : float)
+    + cambiarA(m : Mascota, nuevo : TipoEstado)
+    + {static} crear(tipo : TipoEstado) : unique_ptr<Estado>
+  }
+
+  abstract class Objeto {
+    - nombre_ : string
+    - precio_ : int
+    - usosRestantes_ : int
+    + usar(m : Mascota) : bool
+    + {abstract} categoria() : string
+    + {abstract} detalle() : string
+    # {abstract} aplicar(m : Mascota) : bool
+  }
+
+  class Alimento
+  class Juguete
+  class Medicina
+  class ArticuloAseo
+
+  class Inventario {
+    - objetos_ : vector<unique_ptr<Objeto>>
+    - monedas_ : int
+    + agregar(o : unique_ptr<Objeto>)
+    + usar(indice : size_t, m : Mascota) : bool
+    + {static} inicial() : Inventario
+  }
+
+  class GestorGuardado <<utility>> {
+    + {static} guardar(m : Mascota, ruta : string) : bool
+    + {static} cargar(ruta : string) : unique_ptr<Mascota>
+    + {static} existePartida(ruta : string) : bool
+  }
+
+  class AdminMenu <<herramienta>> {
+    - desbloqueado_ : bool
+    - inmortalidad_ : bool
+    - avanceClave_ : size_t
+    - indiceEscala_ : size_t
+    - registro_ : deque<string>
+    + registrarTecla(t : char) : bool
+    + intentarCodigo(codigo : string) : bool
+    + forzarEstado(m : Mascota, t : TipoEstado)
+    + rellenarAtributos(m : Mascota)
+    + vaciarAtributos(m : Mascota)
+    + establecerAtributo(m, clave, valor) : bool
+    + matar(m : Mascota)
+    + revivir(m : Mascota)
+    + envejecer(m : Mascota, dias : float)
+    + alternarInmortalidad()
+    + aplicarPorTick(m : Mascota, dt : float)
+    + siguienteEscala()
+    + agregarMonedas(inv : Inventario, n : int)
+  }
+}
+
+package "grafico (capa SFML)" {
+
+  class Juego {
+    - ventana_ : sf::RenderWindow
+    - texturas_ : GestorRecursos<sf::Texture>
+    - fuentes_ : GestorRecursos<sf::Font>
+    - pantalla_ : unique_ptr<Pantalla>
+    + ejecutar() : int
+    - inicializar() : bool
+    - cargarFuente() : bool
+    - cambiarPantalla(destino : Transicion)
+    - procesarEventos()
+    - actualizar(dt : float)
+    - dibujar()
+  }
+
+  abstract class Pantalla {
+    + {abstract} manejarEvento(e : sf::Event)
+    + {abstract} actualizar(dt : float)
+    + {abstract} dibujar(objetivo : sf::RenderTarget)
+    + transicion() : Transicion
+    # solicitar(destino : Transicion)
+  }
+
+  class PantallaSeleccion {
+    - mascota_ : unique_ptr<Mascota>
+    - nombre_ : string
+    + tomarMascota() : unique_ptr<Mascota>
+    - elegirEspecie(t : TipoMascota)
+    - confirmar()
+    - escribir(c : Uint32)
+  }
+
+  class PantallaJuego {
+    - mascota_ : unique_ptr<Mascota>
+    - inventario_ : Inventario
+    - admin_ : AdminMenu
+    + guardar() : bool
+    - crearBotones()
+  }
+
+  abstract class RenderMascota {
+    + {abstract} actualizar(m : Mascota, dt : float)
+    + {abstract} establecerPosicion(p : Vector2f)
+    + {abstract} establecerEscala(e : float)
+    + {abstract} nombreRender() : char*
+  }
+
+  class RenderProcedural {
+    - cuerpo_, panza_, ojos_, boca_ : figuras
+    - curvaturaBoca_ : float
+    - alturaBote_ : float
+    - aplicarEstado(t : TipoEstado)
+    - reposicionar(desplazamientoY : float)
+  }
+
+  class RenderSprite {
+    - hoja_ : HojaSprites
+    - animacion_ : Animacion
+    + cargar(especie : string) : bool
+    + {static} rutaDe(especie : string) : string
+  }
+
+  class HojaSprites {
+    - textura_ : sf::Texture
+    - animaciones_ : map<TipoEstado, Animacion>
+    - tintes_ : map<TipoEstado, Color>
+    + cargar(rutaConfig : string) : bool
+    + animacion(t : TipoEstado) : Animacion*
+    + tinte(t : TipoEstado) : Color
+    - {static} recortarFondo(img, fondo, tolerancia)
+  }
+
+  class Cuadro <<struct>> {
+    + recorte : sf::IntRect
+    + origen : sf::Vector2f
+  }
+
+  class VistaMascota <<fachada>> {
+    - render_ : unique_ptr<RenderMascota>
+    - usandoSprites_ : bool
+    + prepararEspecie(texturas, especie) : bool
+    + forzarProcedural()
+  }
+
+  class PanelAdmin {
+    - botones_ : vector<Boton>
+    + enlazar(admin, mascota, inventario, vista)
+    + procesarClic(punto : Vector2f) : bool
+  }
+
+  class "GestorRecursos<T>" as GestorRecursos <<template>> {
+    - recursos_ : map<string, unique_ptr<T>>
+    + cargar(id : string, ruta : string) : bool
+    + obtener(id : string) : T&
+  }
+
+  class Animacion {
+    - cuadros_ : vector<Cuadro>
+    - duracionCuadro_ : float
+    + actualizar(sprite : sf::Sprite, dt : float)
+    + aplicarCuadroActual(sprite : sf::Sprite)
+    + reiniciar()
+  }
+
+  class BarraAtributo {
+    + actualizar(a : Atributo)
+  }
+
+  class Boton {
+    - accion_ : function<void()>
+    + procesarClic(punto : Vector2f) : bool
+  }
+
+  class Hud {
+    - barras_ : vector<BarraAtributo>
+    + actualizar(m : Mascota)
+  }
+
+  class Tema <<namespace>> {
+    + colores y medidas de la interfaz
+    + segunNivel(porcentaje : float) : Color
+  }
+}
+
+' ------------------------- Relaciones del nucleo ---------------------------
+Mascota <|-- Gastly
+Mascota <|-- Perro
+Mascota <|-- Gato
+Mascota <|-- Dragon
+
+Mascota "1" *-- "5" Atributo : posee
+Mascota "1" *-- "1" MaquinaEstados : posee
+
+MaquinaEstados "1" o-- "1" Estado : estado activo
+MaquinaEstados ..> TipoEstado : fabrica
+
+Estado <|-- EstadoNormal
+Estado <|-- EstadoFeliz
+Estado <|-- EstadoHambrienta
+Estado <|-- EstadoCansada
+Estado <|-- EstadoDurmiendo
+Estado <|-- EstadoEnferma
+Estado <|-- EstadoJugando
+Estado <|-- EstadoMuerta
+
+Estado ..> Mascota : modifica
+
+Objeto <|-- Alimento
+Objeto <|-- Juguete
+Objeto <|-- Medicina
+Objeto <|-- ArticuloAseo
+
+Inventario "1" *-- "0..*" Objeto : contiene
+Objeto ..> Mascota : aplica efecto
+
+FabricaMascotas ..> Mascota : crea
+FabricaMascotas ..> TipoMascota
+GestorGuardado ..> Mascota : guarda / carga
+GestorGuardado ..> FabricaMascotas : usa
+
+AdminMenu ..> Mascota : manipula
+AdminMenu ..> Inventario : manipula
+AdminMenu ..> TipoEstado
+
+' ------------------------ Relaciones de la capa grafica --------------------
+Pantalla <|-- PantallaSeleccion
+Pantalla <|-- PantallaJuego
+
+RenderMascota <|-- RenderProcedural
+RenderMascota <|-- RenderSprite
+
+Juego "1" o-- "1" Pantalla : pantalla activa
+Juego "1" *-- "1" GestorRecursos : fuentes
+
+PantallaSeleccion "1" *-- "1" VistaMascota
+PantallaSeleccion "1" o-- "1" Mascota : la crea y la entrega
+PantallaSeleccion ..> FabricaMascotas
+
+PantallaJuego "1" *-- "1" VistaMascota
+PantallaJuego "1" *-- "1" Hud
+PantallaJuego "1" *-- "0..*" Boton
+PantallaJuego "1" *-- "1" AdminMenu
+PantallaJuego "1" *-- "1" PanelAdmin
+PantallaJuego "1" *-- "1" Inventario
+PantallaJuego "1" o-- "1" Mascota
+
+VistaMascota "1" o-- "1" RenderMascota : estrategia
+RenderSprite "1" *-- "1" HojaSprites
+HojaSprites "1" *-- "0..*" Animacion
+Animacion "1" *-- "1..*" Cuadro
+RenderMascota ..> Mascota : observa
+
+PanelAdmin "1" *-- "0..*" Boton
+PanelAdmin ..> AdminMenu : delega los comandos
+
+Hud "1" *-- "5" BarraAtributo
+BarraAtributo ..> Atributo : muestra
+Boton ..> Tema
+Hud ..> Tema
+
+note bottom of Juego
+  La capa grafica depende del nucleo,
+  pero el nucleo NO depende de SFML.
+  Por eso la logica se compila y se
+  prueba sin la libreria grafica.
+end note
+
+note right of VistaMascota
+  Si hay hojas de sprites en assets/
+  se usa RenderSprite; si no, se cae
+  en RenderProcedural y el juego se
+  ve igual sin necesidad de arte.
+end note
+
+@enduml

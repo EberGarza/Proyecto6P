@@ -1,0 +1,98 @@
+@startuml diagrama_estados
+' ============================================================
+'  VirtualPet - Diagrama de estados de la mascota
+'  Refleja las transiciones implementadas en src/Estados.cpp
+' ============================================================
+
+title Diagrama de estados de la mascota
+
+[*] --> Normal
+
+state Normal {
+  Normal : entrada / "esta tranquila"
+}
+
+state Feliz {
+  Feliz : felicidad > 80
+}
+
+state Hambrienta {
+  Hambrienta : saciedad < 20
+  Hambrienta : do / felicidad -= 0.8/s
+}
+
+state Cansada {
+  Cansada : energia < 20
+}
+
+state Durmiendo {
+  Durmiendo : entrada / energia +8/s, higiene 0/s
+  Durmiendo : salida / restaurar tasas base
+  Durmiendo : no acepta interacciones
+}
+
+state Enferma {
+  Enferma : salud < 30
+  Enferma : do / felicidad -= 1.5/s
+}
+
+state Jugando {
+  Jugando : temporizador de 5 s
+  Jugando : do / felicidad +3/s, energia -2/s
+}
+
+state Muerta {
+  Muerta : estado terminal
+  Muerta : entrada / se congelan las tasas
+}
+
+' --- Transiciones por necesidades (prioridad: salud > hambre > energia) ---
+Normal      --> Feliz       : felicidad > 80
+Feliz       --> Normal      : felicidad < 60
+Normal      --> Hambrienta  : saciedad < 20
+Feliz       --> Hambrienta  : saciedad < 20
+Hambrienta  --> Normal      : alimentar() / saciedad > 40
+Normal      --> Cansada     : energia < 20
+Feliz       --> Cansada     : energia < 20
+Cansada     --> Normal      : energia > 35
+Cansada     --> Hambrienta  : saciedad < 20
+
+' --- Sueno ---
+Normal      --> Durmiendo   : dormir()
+Feliz       --> Durmiendo   : dormir()
+Cansada     --> Durmiendo   : dormir() / energia = 0
+Durmiendo   --> Normal      : despertar() o energia = 100
+
+' --- Enfermedad ---
+Normal      --> Enferma     : salud < 30
+Feliz       --> Enferma     : salud < 30
+Hambrienta  --> Enferma     : salud < 30
+Cansada     --> Enferma     : salud < 30
+Enferma     --> Normal      : medicar() / salud > 50
+
+' --- Juego ---
+Normal      --> Jugando     : jugar()
+Feliz       --> Jugando     : jugar()
+Jugando     --> Feliz       : fin del temporizador
+Jugando     --> Hambrienta  : fin del temporizador / saciedad < 20
+Jugando     --> Cansada     : fin del temporizador / energia < 20
+
+' --- Muerte ---
+Normal      --> Muerta      : salud = 0
+Feliz       --> Muerta      : salud = 0
+Hambrienta  --> Muerta      : salud = 0
+Cansada     --> Muerta      : salud = 0
+Durmiendo   --> Muerta      : salud = 0
+Enferma     --> Muerta      : salud = 0
+Jugando     --> Muerta      : salud = 0
+
+Muerta --> [*]
+
+note right of Muerta
+  La salud no baja sola: baja cuando
+  saciedad < 15, higiene < 20 o
+  felicidad < 10 (ver
+  Mascota::aplicarEfectosSecundarios).
+end note
+
+@enduml

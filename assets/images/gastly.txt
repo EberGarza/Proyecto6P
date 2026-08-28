@@ -1,0 +1,108 @@
+# ============================================================================
+#  Hoja de sprites de Gastly (version ampliada, PNG)
+#
+#  Formato
+#    imagen <archivo>            imagen, relativa a esta carpeta
+#    nombre <texto>              nombre de la hoja (informativo)
+#    fondo <r> <g> <b>           color que se vuelve transparente al cargar
+#    tolerancia <n>              cuanto puede alejarse un pixel de ese color
+#                                y aun considerarse fondo
+#    escala <f>                  aumento propio de la hoja
+#
+#    animacion <Estado> <segundos_por_cuadro> [bucle]
+#    tinte <r> <g> <b>           color por el que se multiplica el sprite
+#    cuadro <x> <y> <w> <h> [ox] [oy]
+#
+#  ox,oy es el punto del recorte que queda clavado en la posicion de la
+#  mascota. Va sobre la CARA de Gastly, no sobre el centro del rectangulo: es
+#  lo que el ojo sigue, y asi la animacion no salta cuando un cuadro lleva la
+#  fruta o la pelota al lado. Los valores estan medidos, no estimados: son el
+#  centro de masa de los pixeles oscuros de cada recorte, que es la cara.
+#  En docs/hoja_animaciones.png se ve el resultado, con una cruz en cada
+#  punto de anclaje.
+#  Se puede editar y volver a lanzar el juego: no hace falta recompilar.
+# ============================================================================
+
+imagen     Sprites Sheet - Gastly (Expanded).png
+nombre     Gastly
+fondo      200 224 208
+
+# El PNG es sin perdida y el fondo es un verde plano, asi que basta una
+# tolerancia minima. Con el JPG anterior hacia falta 30 y aun asi dejaba halo.
+tolerancia 12
+
+# La hoja se deja a 1: la pantalla aplica el aumento, y lo hace con un factor
+# entero (x4 en la partida, x2 en la vista previa). Ampliar pixel art por un
+# factor fraccionario hace que unos pixeles ocupen 3 y otros 4, y eso hormiguea.
+escala     1.0
+
+# --- Estados sin arte propio ------------------------------------------------
+# Reutilizan la animacion Normal cambiandole el color. Los tintes se declaran
+# aqui arriba, fuera de cualquier bloque de animacion.
+tinte 168 214 170 Enferma
+
+# --- IDLE: flotando tranquilo -----------------------------------------------
+animacion Normal 0.30
+  cuadro  79 117  81 75   35.9 34.2
+  cuadro 260 117  80 75   25.9 34.6
+  cuadro 432 117  96 75   29.6 34.5
+  cuadro 613 114  94 82   49.0 46.2
+  cuadro 800 117  80 75   25.9 34.6
+  cuadro 972 117  96 75   29.6 34.5
+
+# --- SLEEP: respiracion lenta, el ultimo cuadro es la pose acurrucada -------
+animacion Durmiendo 0.70
+  cuadro  83 273  73 73   39.0 38.2
+  cuadro 263 273  73 73   40.0 37.0
+  cuadro 443 273  73 73   40.6 36.4
+  cuadro 615 273  90 74   45.5 44.8
+
+# --- EAT: el primer cuadro incluye la fruta (llega hasta x=183) -------------
+animacion Hambrienta 0.35
+  cuadro  56 428 128 75   47.3 39.3
+  cuadro 253 424  94 82   49.0 46.2
+  cuadro 444 428  71 73   35.0 36.7
+  cuadro 624 428  71 73   35.0 36.7
+
+# --- GAME: los dos primeros cuadros incluyen la pelota ----------------------
+animacion Jugando 0.20
+  cuadro  64 729 112 91   51.7 50.5
+  cuadro 244 729 112 91   51.7 50.5
+  cuadro 436 734  88 82   47.4 45.2
+  cuadro 616 734  88 82   47.4 45.2
+  cuadro 790 727  99 95   37.0 52.1
+
+# --- FELIZ: lengua fuera ----------------------------------------------------
+animacion Feliz 0.18
+  cuadro  80 893  80 74   35.9 37.3
+  cuadro 259 892  81 75   36.2 34.6
+  cuadro 439 892  81 75   35.7 33.8
+  cuadro 619 892  81 75   34.6 33.3
+  cuadro 799 892  81 75   35.9 32.8
+
+# --- CANSADA ----------------------------------------------------------------
+animacion Cansada 0.50
+  tinte 206 206 218
+  cuadro  83 1044  80 82   35.5 44.7
+  cuadro 259 1047  81 75   35.4 37.8
+  cuadro 439 1048  81 74   36.4 34.3
+  cuadro 620 1046  80 78   35.5 30.2
+  cuadro 799 1048  81 74   36.3 31.5
+
+# --- MUERTA: la pose acurrucada de SLEEP, en gris y sin bucle ---------------
+animacion Muerta 1.00 0
+  tinte 118 118 130
+  cuadro 615 273  90 74   45.5 44.8
+
+# ============================================================================
+#  BATH: animacion de la accion "asear", 4 cuadros.
+#
+#  El motor todavia solo reproduce animaciones de ESTADO, no de accion, asi que
+#  de momento se ignora: al cargar avisa de que hay arte sin conectar. Se deja
+#  declarada para no perder las coordenadas.
+# ============================================================================
+animacion Aseo 0.40
+  cuadro  68 581 104 77
+  cuadro 248 581 104 77
+  cuadro 428 581 104 77
+  cuadro 620 582  79 76

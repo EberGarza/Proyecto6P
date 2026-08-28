@@ -1,0 +1,27 @@
+# Compilacion
+bin/
+obj/
+*.o
+*.obj
+*.exe
+*.out
+*.d
+
+# Partidas guardadas (cada quien tiene la suya)
+partida.txt
+*.sav
+
+# Editores e IDE
+# .vscode/ SI se versiona: lleva la configuracion de IntelliSense del proyecto
+.vs/
+.idea/
+*.code-workspace
+*.cbp
+*.layout
+*.depend
+compile_commands.json
+
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini
